@@ -158,6 +158,16 @@ class tweet_mirror_admin extends tweet_mirror {
 			die($wpdb->last_error);
 		}
 
+		dbDelta("CREATE TABLE `$this->table_log` (
+				log_id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				log_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				log_message VARCHAR(200) NOT NULL DEFAULT '',
+				PRIMARY KEY  (log_id)
+				)");
+		if ($wpdb->last_error) {
+			die($wpdb->last_error);
+		}
+
 		/*
 		 * Save this plugin's options to the database.
 		 */
@@ -184,6 +194,13 @@ class tweet_mirror_admin extends tweet_mirror {
 		$denied = 'command denied to user';
 
 		$wpdb->query("DROP TABLE `$this->table_login`");
+		if ($wpdb->last_error) {
+			if (strpos($wpdb->last_error, $denied) === false) {
+				die($wpdb->last_error);
+			}
+		}
+
+		$wpdb->query("DROP TABLE `$this->table_log`");
 		if ($wpdb->last_error) {
 			if (strpos($wpdb->last_error, $denied) === false) {
 				die($wpdb->last_error);
@@ -227,12 +244,16 @@ class tweet_mirror_admin extends tweet_mirror {
 	 */
 	protected function set_sections() {
 		$this->sections = array(
-			'login' => array(
-				'title' => __("Login Policies", self::ID),
-				'callback' => 'section_login',
+			'auth' => array(
+				'title' => __("Authentication", self::ID),
+				'callback' => 'section_auth',
+			),
+			'feeds' => array(
+				'title' => __("Twitter timelines", self::ID),
+				'callback' => 'section_feeds',
 			),
 			'misc' => array(
-				'title' => __("Miscellaneous Policies", self::ID),
+				'title' => __("Miscellaneous", self::ID),
 				'callback' => 'section_blank',
 			),
 		);
@@ -273,15 +294,6 @@ class tweet_mirror_admin extends tweet_mirror {
 				'bool0' => __("No, don't track logins.", self::ID),
 				'bool1' => __("Yes, track logins.", self::ID),
 			),
-
-			'deactivate_deletes_data' => array(
-				'section' => 'misc',
-				'label' => __("Deactivation", self::ID),
-				'text' => __("Should deactivating the plugin remove all of the plugin's data and settings?", self::ID),
-				'type' => 'bool',
-				'bool0' => __("No, preserve the data for future use.", self::ID),
-				'bool1' => __("Yes, delete the damn data.", self::ID),
-			),
 			'example_int' => array(
 				'section' => 'misc',
 				'label' => __("Integer", self::ID),
@@ -293,6 +305,65 @@ class tweet_mirror_admin extends tweet_mirror {
 				'label' => __("String", self::ID),
 				'text' => __("See how to set a string value.", self::ID),
 				'type' => 'string',
+			),
+
+			'auth_id' => array(
+				'section' => 'auth',
+				'label' => __("AUuh account", self::ID),
+				'text' => __("Twitter account for authentication", self::ID),
+				'type' => 'string',
+			),
+
+			'screen_name' => array(
+					'section' => 'feeds',
+					'label' => __("Twitter name", self::ID),
+					'text' => __("Screen name of Twitter account to mirrir", self::ID),
+					'type' => 'string',
+				),
+			'update_interval_minutes' => array(
+					'section' => 'feeds',
+					'label' => __("Update interval", self::ID),
+					'text' => __("Number of minutes between updates", self::ID),
+					'type' => 'int',
+				),
+			'post_type' => array(
+					'section' => 'feeds',
+					'label' => __("Post type", self::ID),
+					'text' => __("Post type to use for mirrored tweets", self::ID),
+					'type' => 'string',
+				),
+			'post_cat' => array(
+					'section' => 'feeds',
+					'label' => __("Category", self::ID),
+					'text' => __("Category to use for mirrored tweets", self::ID),
+					'type' => 'string',
+				),
+			'post_tags' => array(
+					'section' => 'feeds',
+					'label' => __("Tags", self::ID),
+					'text' => __("Tags to use for mirrored tweets. Sepearate multiple tags with commas.", self::ID),
+					'type' => 'string',
+				),
+			'post_auther' => array(
+					'section' => 'feeds',
+					'label' => __("Author", self::ID),
+					'text' => __("Author to use for mirrored tweets", self::ID),
+					'type' => 'string',
+				),
+			'title' => array(
+					'section' => 'feeds',
+					'label' => __("Title", self::ID),
+					'text' => __("Title to use for mirrored tweets", self::ID),
+					'type' => 'string',
+				),
+
+			'deactivate_deletes_data' => array(
+				'section' => 'misc',
+				'label' => __("Deactivation", self::ID),
+				'text' => __("Should deactivating the plugin remove all of the plugin's data and settings?", self::ID),
+				'type' => 'bool',
+				'bool0' => __("No, preserve the data for future use.", self::ID),
+				'bool1' => __("Yes, delete the data.", self::ID),
 			),
 		);
 	}
@@ -388,20 +459,30 @@ class tweet_mirror_admin extends tweet_mirror {
 	}
 
 	/**
-	 * The callback for "rendering" the sections that don't have descriptions
+	 * Callback for rendering the authentication section description
 	 * @return void
 	 */
-	public function section_blank() {
+	public function section_auth() {
+		echo '<p>';
+		echo $this->hsc_utf8(__("You need to authenticate with a Twitter account to gain access to Twitter data. This doesn't have to be the same as the Twitter account you want to mirror.", self::ID));
+		echo '</p>';
 	}
 
 	/**
-	 * The callback for rendering the "Login Policies" section description
+	 * Callback for rendering the feeds/timelines section description
 	 * @return void
 	 */
-	public function section_login() {
+	public function section_feeds() {
 		echo '<p>';
-		echo $this->hsc_utf8(__("An explanation of this section...", self::ID));
+		echo $this->hsc_utf8(__("Details of the Twitter account you want to mirror in your blog.", self::ID));
 		echo '</p>';
+	}
+
+	/**
+	 * Callback for rendering sections that don't have descriptions
+	 * @return void
+	 */
+	public function section_blank() {
 	}
 
 	/**

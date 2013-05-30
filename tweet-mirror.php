@@ -7,7 +7,7 @@
  * object-oriented programming practices.
  *
  * Plugin URI: http://wordpress.org/extend/plugins/tweet-mirror/
- * Version: 1.1.1
+ * Version: 0.0
  *         (Remember to change the VERSION constant, below, as well!)
  * Author:
  * Author URI:
@@ -49,7 +49,7 @@ class tweet_mirror {
 	/**
 	 * This plugin's version
 	 */
-	const VERSION = '1.1.1';
+	const VERSION = '0.0';
 
 	/**
 	 * This plugin's table name prefix
@@ -80,10 +80,22 @@ class tweet_mirror {
 	 * @var array
 	 */
 	protected $options_default = array(
-		'deactivate_deletes_data' => 1,
 		'example_int' => 5,
 		'example_string' => '',
 		'track_logins' => 1,
+		
+		'auth_id' => '',
+
+		'screen_name' => '',
+		'update_interval_minutes' => 60,
+		'post_type' => '',
+		'post_cat' => '',
+		'post_tags' => '',
+		'post_auther' => '',
+		'title' => '',
+
+		'deactivate_deletes_data' => 1,
+
 	);
 
 	/**
@@ -97,6 +109,12 @@ class tweet_mirror {
 	 * @var string
 	 */
 	protected $table_login;
+
+	/**
+	 * Name, with $table_prefix, of the logging table
+	 * @var string
+	 */
+	protected $table_log;
 
 	/**
 	 * Our usermeta key for tracking when a user logged in
@@ -163,6 +181,7 @@ class tweet_mirror {
 		global $wpdb;
 
 		$this->table_login = $wpdb->get_blog_prefix(0) . $this->prefix . 'login';
+		$this->table_log = $wpdb->get_blog_prefix(0) . $this->prefix . 'log';
 
 		$this->option_name = self::ID . '-options';
 		$this->umk_login_time = self::ID . '-login-time';
