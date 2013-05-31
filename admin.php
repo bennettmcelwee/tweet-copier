@@ -555,10 +555,11 @@ class tweet_mirror_admin extends tweet_mirror {
 			. $this->hsc_utf8($this->option_name)
 			. '[' . $this->hsc_utf8($name) . ']"'
 			. ' value="' . $this->hsc_utf8($this->options[$name]) . '" /> ';
-		echo '<br />';
+		echo '<p class="description">';
 		echo $this->hsc_utf8($this->fields[$name]['text']
 				. ' ' . __('Default:', self::ID) . ' '
 				. $this->options_default[$name] . '.');
+		echo '</p>';
 	}
 
 	/**
