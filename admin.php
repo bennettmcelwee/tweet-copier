@@ -118,6 +118,9 @@ class tweet_mirror_admin extends tweet_mirror {
 			$this->form_action = 'options.php';
 			$this->page_options = 'options-general.php';
 		}
+
+		add_action( 'admin_post_import_now', array($this, 'import_now') );
+
 	}
 
 	/*
@@ -309,7 +312,7 @@ class tweet_mirror_admin extends tweet_mirror {
 
 			'auth_id' => array(
 				'section' => 'auth',
-				'label' => __("AUuh account", self::ID),
+				'label' => __("Authentication account", self::ID),
 				'text' => __("Twitter account for authentication", self::ID),
 				'type' => 'string',
 			),
@@ -317,43 +320,43 @@ class tweet_mirror_admin extends tweet_mirror {
 			'screen_name' => array(
 					'section' => 'feeds',
 					'label' => __("Twitter name", self::ID),
-					'text' => __("Screen name of Twitter account to mirrir", self::ID),
+					'text' => __("Screen name of Twitter account to mirror.", self::ID),
 					'type' => 'string',
 				),
 			'update_interval_minutes' => array(
 					'section' => 'feeds',
 					'label' => __("Update interval", self::ID),
-					'text' => __("Number of minutes between updates", self::ID),
+					'text' => __("Number of minutes between updates.", self::ID),
 					'type' => 'int',
 				),
 			'post_type' => array(
 					'section' => 'feeds',
 					'label' => __("Post type", self::ID),
-					'text' => __("Post type to use for mirrored tweets", self::ID),
+					'text' => __("Post type to use for mirrored tweets.", self::ID),
 					'type' => 'string',
 				),
 			'post_cat' => array(
 					'section' => 'feeds',
 					'label' => __("Category", self::ID),
-					'text' => __("Category to use for mirrored tweets", self::ID),
+					'text' => __("Category to use for mirrored tweets.", self::ID),
 					'type' => 'string',
 				),
 			'post_tags' => array(
 					'section' => 'feeds',
 					'label' => __("Tags", self::ID),
-					'text' => __("Tags to use for mirrored tweets. Sepearate multiple tags with commas.", self::ID),
+					'text' => __("Tags to use for mirrored tweets. Separate multiple tags with commas.", self::ID),
 					'type' => 'string',
 				),
 			'post_auther' => array(
 					'section' => 'feeds',
 					'label' => __("Author", self::ID),
-					'text' => __("Author to use for mirrored tweets", self::ID),
+					'text' => __("Author to use for mirrored tweets.", self::ID),
 					'type' => 'string',
 				),
 			'title' => array(
 					'section' => 'feeds',
 					'label' => __("Title", self::ID),
-					'text' => __("Title to use for mirrored tweets", self::ID),
+					'text' => __("Title to use for mirrored tweets.", self::ID),
 					'type' => 'string',
 				),
 
@@ -456,6 +459,23 @@ class tweet_mirror_admin extends tweet_mirror {
 		do_settings_sections(self::ID);
 		submit_button();
 		echo '</form>';
+		
+		// Import Now button
+		?>
+        <form action="<?php echo admin_url( 'admin-post.php' ); ?>" method="POST">
+        	<input type="hidden" name="option_page" value="tweet-mirror-options">
+            <input type="hidden" name="action" value="import_now">
+            <input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>">
+            <?php wp_nonce_field( 'import_now', 'import-now-nonce', FALSE ); ?>
+
+            <?php submit_button( 'Import now' ); ?>
+        </form>
+		<?
+
+	}
+
+	function import_now() {
+		die( "Importing!" );
 	}
 
 	/**
@@ -541,9 +561,10 @@ class tweet_mirror_admin extends tweet_mirror {
 			. $this->hsc_utf8($this->option_name)
 			. '[' . $this->hsc_utf8($name) . ']"'
 			. ' value="' . $this->hsc_utf8($this->options[$name]) . '" /> ';
-		echo $this->hsc_utf8($this->fields[$name]['text']
-				. ' ' . __('Default:', self::ID) . ' '
-				. $this->options_default[$name] . '.');
+		echo '<span class="description">';
+		echo $this->hsc_utf8($this->fields[$name]['text']);
+				//. ' ' . __('Default:', self::ID) . ' ' . $this->options_default[$name] . '.');
+		echo '</span>';
 	}
 
 	/**
@@ -556,9 +577,8 @@ class tweet_mirror_admin extends tweet_mirror {
 			. '[' . $this->hsc_utf8($name) . ']"'
 			. ' value="' . $this->hsc_utf8($this->options[$name]) . '" /> ';
 		echo '<p class="description">';
-		echo $this->hsc_utf8($this->fields[$name]['text']
-				. ' ' . __('Default:', self::ID) . ' '
-				. $this->options_default[$name] . '.');
+		echo $this->hsc_utf8($this->fields[$name]['text']);
+				//. ' ' . __('Default:', self::ID) . ' ' . $this->options_default[$name] . '.');
 		echo '</p>';
 	}
 
