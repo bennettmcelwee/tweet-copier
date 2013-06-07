@@ -1,211 +1,49 @@
-=== Tweet Mirror ===
-Contributors:
-Donate link:
-Tags:
-Requires at least: 3.3
-Tested up to: 3.5beta1
-Stable tag: trunk
+=== WordPress Plugin Template ===
+Contributors: hlashbrooke
+Donate link: http://www.hughlashbrooke.com/donate
+Tags: wordpress, plugin, template
+Requires at least: 3.0
+Tested up to: 3.5.1
+Stable tag: 1.0
 
-A well engineered template for creating plugins using object-oriented programming practices. Uses Settings API, multisite, i18n, PHPUnit tests.
-
+A comprehensive code template for any WordPress plugin.
 
 == Description ==
 
-Gives authors of new plugins a leg up on creating a great, easy to
-maintain plugin by providing a carefully designed plugin skeleton to build on.
-Authors of existing plugins can extract individual components and concepts
-for transplantation into their own projects.
+"WordPress Plugin Template" is an object-oriented code template for any kind of WordPress plugin that includes built-in support for:
 
-* Clean, object-oriented design
-* PHPUnit tests
-* Admin screen uses the Settings API
-* Multisite support
-* Creates a table during activation
-* Drops the table and settings during deactivation
-* Uses WordPress' i18n and provides scripts for generating the gettext files
-* Installation instructions have a script for renaming files, classes and IDs
+1. Custom post types with custom fields and custom taxonomies
+1. Plugin settings page
+1. WPML localisation
 
-See the FAQ section for more details about this plugin's features.
+Activating this plugin template in your WordPress dashboard will activate a new custom post type (identified as '*Posts' in the menu) as well as a new settings page (found at Settings > Plugin Settings). These pages are for demonstration purposes - all you need to do is edit the files in the plugin where necessary and these pages will reflect your new functionality.
 
-Development of this plugin template happens on
-[GitHub](https://github.com/convissor/tweet-mirror).
-Please submit
-[bug and feature requests](https://github.com/convissor/tweet-mirror/issues),
-[pull requests](https://github.com/convissor/tweet-mirror/pulls),
-[wiki entries](https://github.com/convissor/tweet-mirror/wiki)
-there.
-Releases are then squashed and pushed to WordPress'
-[Plugins SVN repository](http://plugins.svn.wordpress.org/tweet-mirror/).
-This division is necessary due having being chastised that "the Plugins SVN
-repository is a release system, not a development system."
+== Usage ==
 
-= Explanations =
-
-If you want an explanation of how this "plugin" works, please see the
-"PHPUnit Tests for WordPress Plugins" series on my blog.
-
-* [Global Variables](http://www.analysisandsolutions.com/blog/html/writing-phpunit-tests-for-wordpress-plugins-global-variables.htm)
-* [wp_mail()](http://www.analysisandsolutions.com/blog/html/writing-phpunit-tests-for-wordpress-plugins-wp-mail.htm)
-* [wp_redirect() and Expected PHP Errors](http://www.analysisandsolutions.com/blog/html/writing-phpunit-tests-for-wordpress-plugins-wp-redirect-and-continuing-after-php-errors.htm)
-* [Auto-increment ID Records](http://www.analysisandsolutions.com/blog/html/writing-phpunit-tests-for-wordpress-plugins-auto-increment-id-records.htm)
-
+This plugin is intended to be a code framework for creating your own plugin. Just edit the files where necessary to have it working in the way that you need it to be.
 
 == Installation ==
 
-1. Download the zip file from WordPress' plugin
-    site: `http://wordpress.org/extend/plugins/tweet-mirror/`
+Installing "WordPress Plugin Template" can be done either by searching for "WordPress Plugin Template" via the "Plugins > Add New" screen in your WordPress dashboard, or by using the following steps:
 
-1. Unzip the file
-
-1. Here are some semi-automated steps to copy this plugin and rename the
-    files, class names, and identifiers.  The commands are in Bash,
-    adjust them as needed for your environment.  Replace the three mentions
-    of "My Plugin" in the settings section with the name of your plugin.
-
-        # Settings -----
-        # Plugin identifier / directory (hyphen separated).
-        old_id=tweet-mirror
-        new_id=my-plugin
-
-        # Class name (underscore separated).
-        old_class=tweet_mirror
-        new_class=my_plugin
-
-        # Plugin Name (space separated).
-        old_name="Tweet Mirror"
-        new_name="My Plugin"
-        # --------------
-
-
-        # Copy and rename the files.
-        cp -R $old_id $new_id
-        cd $new_id
-        mv $old_id.php $new_id.php
-
-        # Replace strings in the files.
-        find . -type f -exec sed "s/$old_id/$new_id/g" -i {} \;
-        find . -type f -exec sed "s/$old_class/$new_class/g" -i {} \;
-        find . -type f -exec sed "s/$old_name/$new_name/g" -i {} \;
-        find . -type f -exec sed -E "s/^ \* (Author:|Author URI:|@author|@copyright) (.*)$/ * \1/g" -i {} \;
-        find . -type f -exec sed "s@http://wordpress.org/extend/plugins/oop-plugin-template-solution/@http://wordpress.org/extend/plugins/tweet-mirror/@g" -i {} \;
-        sed -E "s/^(Contributors|Donate link|Tags): (.*)$/\1:/g" -i readme.txt
-
-1. Now get down to making the plugin do what you want.  See the FAQ
-   for instructions about particular aspects.
-
-1. Upload your plugin directory to your server's `/wp-content/plugins/`
-    directory
-
-1. Activate the plugin using WordPress' admin interface:
-    * Regular sites:  Plugins
-    * Sites using multisite networks:  My Sites | Network Admin | Plugins
-
-= Removal =
-
-1. This plugin offers the ability to remove all of this plugin's settings
-    from your database.  Go to WordPress' "Plugins" admin interface and
-    click the "Settings" link for this plugin.  In the "Deactivate" entry,
-    click the "Yes, delete the damn data" button and save the form.
-
-1. Use WordPress' "Plugins" admin interface to click the "Deactivate" link
-
-1. Remove the plugins directory from the server
-
+1. Download the plugin via WordPress.org
+1. Upload the ZIP file through the 'Plugins > Add New > Upload' screen in your WordPress dashboard
+1. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Frequently Asked Questions ==
 
-= Multisite Networks =
+= I've installed the plugin - now what? =
 
-This plugin is coded to be installed in either a regular, single WordPress
-installation or as a network plugin for multisite installations.  So, by
-default, multisite networks can only activate this plugin via the Network Admin
-panel.
-
-If you want your plugin to be configurable for each site in a multisite
-network, follow the instructions in the docblock at the top of `admin.php`.
-
-
-= Settings API =
-
-We add some abstraction around WordPress'
-[Settings API](http://codex.wordpress.org/Settings_API).  All you need to do
-is add some elements to two arrays and maybe create a section header if you
-want.  This is way better than having to write out `add_settings_field()`
-calls and creating display and validation callbacks for each and every field.
-
-1. Open `admin.php` in your favorite text editor
-
-1. Read the docblock at the top of the file
-
-
-= Unit Tests =
-
-This framework uses PHPUnit, so standard PHPUnit file, class, and method
-naming practices apply.  Our framework requires that your test files and
-classes:
-
-* Have a `require_once` call for `TestCase.php` at the top of the script.
-  That obtains the PHPUnit and other items needed.  It's the only file you
-  need to include.
-* Classes must extend `TestCase`
-* If you add a `setUpBeforeClass()` method, it must
-  call `parent::setUpBeforeClass()`
-* If you add a `setUp()` method, it must call `parent::setUp()`
-* If you add a `tearDown()` method, it must call `parent::tearDown()`
-* If you add a `tearDownAfterClass()` method, it must
-  call `parent::tearDownAfterClass()`
-
-Take a look at the `TestLogin.php` script for examples of how to handle
-calls to `wp_mail()` (and translations of mail messages) and `wp_redirect()`,
-the use of database savepoints, and manipulating user metadata.
-
-Please note that the tests make extensive use of database transactions.
-Many tests will be skipped if your `wp_options` and `wp_usermeta` tables
-are not using the `InnoDB` storage engine.
-
-To execute the tests, install and activate the plugin, then use a shell
-to `cd` into this plugin's directory and call `phpunit tests`
-
-While it is possible to test plugins using [WordPress' Automated
-Testing](http://codex.wordpress.org/Automated_Testing) PHPUnit framework, it
-is a complex system, is another dependency, and runs in its own environment.
-The benefit of using my plugin's PHPUnit is that it ships with the plugin
-and executes in the users actual WordPress installation.  This means any end
-user can easily test how the plugin interacts with their site.
-
-
-= Translations =
-
-To produce the machine readable translations used by WordPress' gettext
-implementation, use the scripts I made for generating all of
-the `.pot`, `.po` and `.mo` files:
-
-* `cd languages`
-* `./makepot.sh`
-* Update the headers, version number, etc in the `.pot` file as desired.
-* To add a new language: `touch <plugin-id>-<lc>_<CC>.mo`  Substitutions:
-    plugin-id: the plugin's identifier ($new_id from above)
-    lc: language code
-    CC: country code
-* `./updatepos.sh`
-* Fill the translated text in the `.po` files.
-* `./makemos.sh`
-
+While this plugin adds a post type, taxonomy and settings page to your WordPress dashboard, it is just a framework and is not intended for real world use in its current form. You need to edit the included files to buid your own plugin and create your own functionality.
 
 == Changelog ==
 
-= 1.1.1 (2012-11-28) =
-* Tell folks where explanations can be found.
+= 1.0 =
+* 2012-12-13
+* Initial release
 
-= 1.1.0 (2012-11-08) =
-* Move the `wp_logout()` and `wp_redirect()` calls from direct calls in the
-test method to a method in the tested class instead.
+== Upgrade Notice ==
 
-= 1.0.2 (2012-11-05) =
-* Explain why can't use PHPUnit's @expectedException functionality.
-
-= 1.0.1 (2012-11-05) =
-* Clarify instructions and descriptions.
-
-= 1.0.0 (2012-11-05) =
-* Initial release.
+= 1.0 =
+* 2012-12-13
+* Initial release
