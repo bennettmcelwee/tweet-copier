@@ -1,5 +1,4 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class TweetMirrorSettings {
@@ -22,6 +21,10 @@ class TweetMirrorSettings {
 
 		// Add settings link to plugins page
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
+		
+		// Handle the Import Now button
+		add_filter( 'pre_update_option_tweet_mirror_import_now' , array( &$this , 'import_now_filter' ) );
+		
 	}
 	
 	public function add_menu_item() {
@@ -72,18 +75,26 @@ class TweetMirrorSettings {
 	public function settings_page() {
 
 		echo '<div class="wrap">
-				<div class="icon32" id="plugin_settings-icon"><br/></div>
+				<div class="icon32" id="icon-options-general"><br/></div>
 				<h2>Tweet Mirror Settings</h2>
 				<form method="post" action="options.php" enctype="multipart/form-data">';
 
 				settings_fields( 'plugin_settings' );
 				do_settings_sections( 'plugin_settings' );
 
-			  echo '<p class="submit">
-						<input name="Submit" type="submit" class="button-primary" value="' . esc_attr( __( 'Save Settings' , 'tweet_mirror_textdomain' ) ) . '" />
-					</p>
-				</form>
+				submit_button( __( 'Save Settings' , 'tweet_mirror_textdomain' ) );
+				
+				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', 'import_now' );
+				
+				
+		echo '</form>
 			  </div>';
 	}
 	
+//	pre_update_option_tweet_mirror_import_now
+	public function import_now_filter( $newvalue, $oldvalue ) {
+		add_settings_error('general', 'tweets_imported', __('Tweets imported (not really though!)'), 'updated');
+		return $oldvalue;
+	}
+
 }
