@@ -1,6 +1,6 @@
 <?php
 
-class TweetImporter {
+class Tweet_Importer {
 
 const TWITTER_API_USER_TIMELINE_URL = 'https://api.twitter.com/1/statuses/user_timeline.json?screen_name=<USER>&count=3';
 
@@ -10,8 +10,8 @@ public function __construct($namespace) {
 	$this->namespace = $namespace;
 
 	// Default actions and filters
-	if ( ! has_action ($this->namespace . '_tweet_before_new_post', 'TweetImporter::stop_duplicates')) {
-		add_action($this->namespace . '_tweet_before_new_post', 'TweetImporter::stop_duplicates');
+	if ( ! has_action ($this->namespace . '_tweet_before_new_post', 'Tweet_Importer::stop_duplicates')) {
+		add_action($this->namespace . '_tweet_before_new_post', 'Tweet_Importer::stop_duplicates');
 	}
 }
 
@@ -35,7 +35,7 @@ public function import_twitter_feed($screen_name) {
 		return '<strong>ERROR: Feed Reading Error: ' . $response['headers']['status'] . '</strong>';
 	}
 
-	return TweetImporter::import_tweets($tweet_list);
+	return Tweet_Importer::import_tweets($tweet_list);
 }
 
 
@@ -152,5 +152,5 @@ static function compare_twitter_id($id1, $id2) {
 	return strcmp($id1, $id2);
 }
 
-} // class TweetImporter
+} // class Tweet_Importer
 
