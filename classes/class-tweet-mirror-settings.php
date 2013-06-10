@@ -28,6 +28,7 @@ class TweetMirrorSettings {
 	}
 	
 	public function add_menu_item() {
+		// add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function);
 		add_options_page( 'Tweet Mirror Settings' , 'Tweet Mirror Settings' , 'manage_options' , 'tweet_mirror_settings' ,  array( &$this , 'settings_page' ) );
 	}
 
@@ -39,13 +40,13 @@ class TweetMirrorSettings {
 
 	public function register_settings() {
 		
-		// Add settings section
+		// add_settings_section( $id, $title, $callback, $page );
 		add_settings_section( 'tweet_mirror_main_settings' , __( 'Mirroring tweets' , 'tweet_mirror_textdomain' ) , array( &$this , 'main_settings' ) , 'tweet_mirror_settings' );
 		
-		// Add settings fields
+		// add_settings_field( $id, $title, $callback, $page, $section, $args );
 		add_settings_field( 'tweet_mirror_field1' , __( 'Field 1:' , 'tweet_mirror_textdomain' ) , array( &$this , 'settings_field' )  , 'tweet_mirror_settings' , 'tweet_mirror_main_settings' );
 		
-		// Register settings fields
+		// register_setting( $option_group, $option_name, $sanitize_callback );
 		register_setting( 'tweet_mirror_settings' , 'tweet_mirror_field1' , array( &$this , 'validate_field' ) );
 
 	}
