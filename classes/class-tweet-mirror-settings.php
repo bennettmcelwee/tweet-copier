@@ -125,9 +125,10 @@ class TweetMirrorSettings {
 	
 //	pre_update_option_tweet_mirror_import_now
 	public function import_now_filter( $newvalue, $oldvalue ) {
-		// If there's a new value then this button was clicked
+		// If there's a new value then this button was clicked, so do the import
 		if ( $newvalue != '' ) {
-			add_settings_error('general', 'tweets_imported', __('Import filter') . " [$newvalue]", 'updated');
+			// HACK: updated options are available here, but only because this button comes after the form fields.
+			add_settings_error('general', 'tweets_imported', __('Will import from ') . ' [' . get_option( self::SCREENNAME_FIELD ) . ']', 'updated');
 		}
 		// Return the old value so it doesn't get saved
 		return $oldvalue;
