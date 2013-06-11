@@ -3,7 +3,7 @@
  * Plugin Name: Tweet Mirror
  * Version: 0.1
  * Plugin URI: http://thunderguy.com/semicolon
- * Description: Basic template for creating a WordPress plugin
+ * Description: Im in ur Wordprez. Mrrring ur tweetz.
  * Author: Bennett McElwee
  * Author URI: http://thunderguy.com/
  * Requires at least: 3.0
