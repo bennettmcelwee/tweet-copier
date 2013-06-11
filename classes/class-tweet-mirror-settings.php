@@ -2,6 +2,16 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class TweetMirrorSettings {
+
+	const SETTINGS_PAGE = 'tweet_mirror_settings';
+	const SETTINGS_OPTION_GROUP = 'tweet_mirror_options1';
+	const MIRRORING_SECTION = 'tweet_mirror_main_settings';
+
+	const SCREENNAME_FIELD = 'tweet_mirror_screenname';
+	const POSTTYPE_FIELD = 'tweet_mirror_posttype';
+	const CATEGORY_FIELD = 'tweet_mirror_category';
+	const AUTHOR_FIELD = 'tweet_mirror_author';
+
 	private $dir;
 	private $file;
 	private $assets_dir;
@@ -29,11 +39,11 @@ class TweetMirrorSettings {
 	
 	public function add_menu_item() {
 		// add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function);
-		add_options_page( 'Tweet Mirror Settings' , 'Tweet Mirror Settings' , 'manage_options' , 'tweet_mirror_settings' ,  array( &$this , 'settings_page' ) );
+		add_options_page( 'Tweet Mirror Settings' , 'Tweet Mirror Settings' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
 	}
 
 	public function add_settings_link( $links ) {
-		$settings_link = '<a href="options-general.php?page=tweet_mirror_settings">Settings</a>';
+		$settings_link = '<a href="options-general.php?page=' . self::SETTINGS_PAGE . '">Settings</a>';
   		array_push( $links, $settings_link );
   		return $links;
 	}
@@ -41,32 +51,50 @@ class TweetMirrorSettings {
 	public function register_settings() {
 		
 		// add_settings_section( $id, $title, $callback, $page );
-		add_settings_section( 'tweet_mirror_main_settings' , __( 'Mirroring tweets' , 'tweet_mirror_textdomain' ) , array( &$this , 'main_settings' ) , 'tweet_mirror_settings' );
+		add_settings_section( self::MIRRORING_SECTION , __( 'Mirroring tweets' , 'tweet_mirror_textdomain' ) , array( &$this , 'main_settings' ) , self::SETTINGS_PAGE );
 		
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
-		add_settings_field( 'tweet_mirror_field1' , __( 'Field 1:' , 'tweet_mirror_textdomain' ) , array( &$this , 'settings_field' )  , 'tweet_mirror_settings' , 'tweet_mirror_main_settings' );
+		add_settings_field( self::SCREENNAME_FIELD, __( 'Screen name:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'settings_field_string' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( 'fieldname' => self::SCREENNAME_FIELD, 'description' => 'Screen name of Twitter account to mirror', 'label_for' => self::SCREENNAME_FIELD ) );
+		add_settings_field( self::AUTHOR_FIELD, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'settings_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( 'fieldname' => self::AUTHOR_FIELD, 'description' => 'Author to use for mirrored tweets', 'label_for' => self::AUTHOR_FIELD ) );
 		
 		// register_setting( $option_group, $option_name, $sanitize_callback );
-		register_setting( 'tweet_mirror_settings' , 'tweet_mirror_field1' , array( &$this , 'validate_field' ) );
-
+		register_setting( self::SETTINGS_OPTION_GROUP , self::SCREENNAME_FIELD , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_FIELD , array( &$this , 'sanitize_slug' ) );
 	}
 
 	public function main_settings() { echo '<p>' . __( 'Change these settings ot customise your plugin.' , 'tweet_mirror_textdomain' ) . '</p>'; }
 
-	public function settings_field() {
+	public function settings_field_string( $args ) {
 
-		$option = get_option('tweet_mirror_field1');
-
-		$data = '';
-		if( $option && strlen( $option ) > 0 && $option != '' ) {
-			$data = $option;
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
 		}
-
-		echo '<input id="slug" type="text" name="tweet_mirror_field1" value="' . $data . '"/>
-				<label for="slug"><span class="description">' . __( 'Descipriton of settings field' , 'tweet_mirror_textdomain' ) . '</span></label>';
+		echo '<input id="' . $fieldname . '" type="text" name="' . $fieldname . '" value="' . $value . '"/>
+				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
-	public function validate_field( $slug ) {
+	public function settings_field_author( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
+		}
+		wp_dropdown_users( array( 'id' => $fieldname, 'name' => $fieldname, 'selected' => $value ) );
+		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+	}
+
+	public function sanitize_slug( $slug ) {
 		if( $slug && strlen( $slug ) > 0 && $slug != '' ) {
 			$slug = urlencode( strtolower( str_replace( ' ' , '-' , $slug ) ) );
 		}
@@ -80,8 +108,10 @@ class TweetMirrorSettings {
 				<h2>Tweet Mirror Settings</h2>
 				<form method="post" action="options.php" enctype="multipart/form-data">';
 
-				settings_fields( 'plugin_settings' );
-				do_settings_sections( 'plugin_settings' );
+				// settings_fields( $option_group )
+				settings_fields( self::SETTINGS_OPTION_GROUP );
+				// do_settings_sections( $page )
+				do_settings_sections( self::SETTINGS_PAGE );
 
 				submit_button( __( 'Save Settings' , 'tweet_mirror_textdomain' ) );
 				
