@@ -2,8 +2,10 @@
 
 class Tweet_Importer {
 
-const TWITTER_API_USER_TIMELINE_URL = 'https://api.twitter.com/1/statuses/user_timeline.json?screen_name=<USER>&count=3';
+/** URL for fetching tweets; <SCREENNAME> is replaced with the, erm, screen name */
+const TWITTER_API_USER_TIMELINE_URL = 'https://api.twitter.com/1/statuses/user_timeline.json?screen_name=<SCREENNAME>&count=3';
 
+/** Namespace prefix, used for hooks */
 private $namespace;
 
 public function __construct($namespace) {
@@ -15,9 +17,9 @@ public function __construct($namespace) {
 	}
 }
 
-public function import_twitter_feed($screen_name) {
+public function import_twitter_feed($params) {
 
-    $feed_url = str_replace('<USER>', $screen_name, TWITTER_API_USER_TIMELINE_URL);
+    $feed_url = str_replace('<SCREENNAME>', $params['screen_name'], TWITTER_API_USER_TIMELINE_URL);
 
 	// Get JSON data
 	
@@ -35,11 +37,11 @@ public function import_twitter_feed($screen_name) {
 		return '<strong>ERROR: Feed Reading Error: ' . $response['headers']['status'] . '</strong>';
 	}
 
-	return Tweet_Importer::import_tweets($tweet_list);
+	return $this->import_tweets($params, $tweet_list);
 }
 
 
-private function import_tweets($tweet_list) {
+private function import_tweets($params, $tweet_list) {
 
 	$count = 0;
 	$lo_id = null;
@@ -50,14 +52,17 @@ private function import_tweets($tweet_list) {
 			continue;
 		}
 
-		$processed_text = iconv( "UTF-8", "ISO-8859-1//IGNORE", $tweet->text );
+		$plain_text = iconv( "UTF-8", "ISO-8859-1//IGNORE", $tweet->text );
 
-		//  Get the twitter author from the beginning of the tweet text
-		$twitter_author = trim(preg_replace("~^(\w+):(.*?)$~", "\\1", $processed_text));
+		// Extract the author and the message
+		$tweet_author = trim(preg_replace("~^(\w+):(.*?)$~", "\\1", $plain_text));
+		$text_only    = trim(preg_replace("~^(\w+):~", "", $plain_text));
 
 		//if ($twitter_account['strip_name'] == 1) {
-			$processed_text = preg_replace("~^(\w+):(.*?)~i", "\\2", $processed_text);
+			$plain_text = $text_only;
 		//}
+
+		$processed_text = $plain_text;
 
 		//if ($twitter_account['names_clickable'] == 1) {
 			$processed_text = preg_replace("~@(\w+)~", "<a href=\"http://www.twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
@@ -75,12 +80,12 @@ private function import_tweets($tweet_list) {
 		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);
 		$processed_text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $processed_text);
 
-		$new_post = array('post_title' => trim (substr (preg_replace("~{$account_parts[0]}: ~i", "", $tweet->text), 0, 25) . '...'),
-						  'post_content' => trim ($processed_text),
+		$new_post = array('post_title' => trim( substr( $text_only, 0, 25 ) . '...' ),
+						  'post_content' => trim( $processed_text ),
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
-						  'post_author' => $twitter_account['author'],
-						  'post_category' => array($twitter_account['category']),
+						  'post_author' => $params['author'],
+						  'post_category' => array($params['category']),
 						  'post_status' => 'publish');
 
 		$new_post = apply_filters($this->namespace . '_new_post_before_create', $new_post); // Offer the chance to manipulate new post data. return false to skip
@@ -89,7 +94,7 @@ private function import_tweets($tweet_list) {
 		}
 		$new_post_id = wp_insert_post($new_post);
 
-		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $twitter_author, true); 
+		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $tweet_author, true); 
 		add_post_meta ($new_post_id, 'tweetimport_date_imported', date ('Y-m-d H:i:s'), true);
 		add_post_meta ($new_post_id, 'tweetimport_twitter_id', $tweet->id_str, true);
 
