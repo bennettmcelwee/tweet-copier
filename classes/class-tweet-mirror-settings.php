@@ -64,6 +64,7 @@ class TweetMirrorSettings {
 		// register_setting( $option_group, $option_name, $sanitize_callback );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCREENNAME_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_FIELD , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , 'tweet_mirror_import_now' );
 	}
 
 	public function main_settings() { echo '<p>' . __( 'Change these settings ot customise your plugin.' , 'tweet_mirror_textdomain' ) . '</p>'; }
@@ -115,7 +116,7 @@ class TweetMirrorSettings {
 
 				submit_button( __( 'Save Settings' , 'tweet_mirror_textdomain' ) );
 				
-				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', 'import_now' );
+				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', 'tweet_mirror_import_now' );
 				
 				
 		echo '</form>
@@ -124,7 +125,11 @@ class TweetMirrorSettings {
 	
 //	pre_update_option_tweet_mirror_import_now
 	public function import_now_filter( $newvalue, $oldvalue ) {
-		add_settings_error('general', 'tweets_imported', __('Tweets imported (not really though!)'), 'updated');
+		// If there's a new value then this button was clicked
+		if ( $newvalue != '' ) {
+			add_settings_error('general', 'tweets_imported', __('Import filter') . " [$newvalue]", 'updated');
+		}
+		// Return the old value so it doesn't get saved
 		return $oldvalue;
 	}
 
