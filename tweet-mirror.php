@@ -18,10 +18,15 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-// Include plugin class files
-require_once( 'classes/class-tweet-mirror.php' );
-require_once( 'classes/class-tweet-mirror-settings.php' );
-require_once( 'classes/class-tweetimporter.php' );
+// Include plugin libraries and class files
+require_once 'lib/tmhOAuth.php';
+require_once 'lib/tmhUtilities.php';
+
+require_once 'classes/class-tweet-mirror.php';
+require_once 'classes/class-tweet-mirror-settings.php';
+require_once 'classes/class-tweetimporter.php';
+
+require_once 'constants.php';
 
 // Instantiate necessary classes
 global $plugin_obj;

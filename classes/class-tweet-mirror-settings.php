@@ -130,18 +130,18 @@ class TweetMirrorSettings {
 			$importer = new Tweet_Importer( 'tweet_mirror' );
 			
 			// HACK: updated options are available here, but only because this button comes after the form fields.
-			/*
-			$importer->import_twitter_feed(array(
+			
+			$result = $importer->import_twitter_feed(array(
 				'screen_name' => get_option( self::SCREENNAME_FIELD ),
 				'author' => get_option( self::AUTHOR_FIELD ),
 				'category' => 0,
 			));
-			*/
-
-			add_settings_error('general', 'tweets_imported', __('Imported from ') . ' [' . get_option( self::SCREENNAME_FIELD ) . ']', 'updated');
-			add_settings_error('general', 'tweets_imported', 'screenname [' . get_option( self::SCREENNAME_FIELD ) . ']', 'updated');
-			add_settings_error('general', 'tweets_imported', 'author [' . get_option( self::AUTHOR_FIELD ) . ']', 'updated');
-			add_settings_error('general', 'tweets_imported', 'category [' . 0 . ']', 'updated');
+			
+			if ( isset( $result['error'] )) {
+				add_settings_error('general', 'tweets_imported', __('Error: ') . $result['error'], 'error');
+			} else {
+				add_settings_error('general', 'tweets_imported', 'Imported ' . $result['count'] . ' tweets from @' . get_option( self::SCREENNAME_FIELD ), 'updated');
+			}
 		}
 		// Return the old value so it doesn't get saved
 		return $oldvalue;

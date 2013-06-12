@@ -17,27 +17,40 @@ public function __construct($namespace) {
 	}
 }
 
-public function import_twitter_feed($params) {
+public function import_twitter_feed( $params ) {
 
-    $feed_url = str_replace('<SCREENNAME>', $params['screen_name'], TWITTER_API_USER_TIMELINE_URL);
+	$twitter_api = new tmhOAuth(array(
+		'consumer_key'    => TWITTER_CONSUMER_KEY,
+		'consumer_secret' => TWITTER_CONSUMER_SECRET,
+		'user_token'      => TWITTER_USER_TOKEN,
+		'user_secret'     => TWITTER_USER_SECRET,
+	));
 
-	// Get JSON data
+	$method = "https://api.twitter.com/1.1/statuses/user_timeline.json";
+	$params = array(
+		'count' => 3,
+		'screen_name' => $params['screen_name'],
+		'trim_user' => true,
+	);
+	$twitter_api->request( 'GET', $method, $params );
+	//tmhUtilities::pr( $twitter_api->response );
+
+	//error_log( 'code ' . $twitter_api->response['code'] );
+	//error_log( 'response ' . $twitter_api->response['response'] );
 	
-	// Don't verify SSL certificate, as this fails from my work PC...
-	// $response = wp_remote_get( $feed_url );
-	$response = wp_remote_get( $feed_url, array( 'sslverify' => false ) );
-
-	// wp_die( '<pre>'. htmlentities( print_r( $response, true ) ) .'</pre>' );
-	$body = wp_remote_retrieve_body( $response );
-	$tweet_list = json_decode( $body );
-
-	if ( $tweet_list && !empty( $response['headers']['status'] ) && $response['headers']['status'] == '200 OK' ) {
-		// all is well
+	if ( $twitter_api->response['code'] === 200 ) {
+		$body = $twitter_api->response['response'];
+		$tweet_list = json_decode( $body );
+		//error_log( 'tweets ' . print_r( $tweet_list, true ) );
+		return $this->import_tweets( $params, $tweet_list );
 	} else {
-		return '<strong>ERROR: Feed Reading Error: ' . $response['headers']['status'] . '</strong>';
+		return array( 'count' => 0,
+					  'error' => 'Twitter API: '
+						. "code [{$twitter_api->response['code']}] "
+						. "errno [{$twitter_api->response['errno']}] "
+						. "error [{$twitter_api->response['error']}]",
+					);
 	}
-
-	return $this->import_tweets($params, $tweet_list);
 }
 
 
@@ -107,8 +120,8 @@ private function import_tweets($params, $tweet_list) {
 		//wp_set_post_tags($new_post_id, implode (',', $out[0]));
 
 		++$count;
-		$lo_id = min_twitter_id($tweet->id_str, $lo_id);
-		$hi_id = max_twitter_id($tweet->id_str, $hi_id);
+		$lo_id = self::min_twitter_id($tweet->id_str, $lo_id);
+		$hi_id = self::max_twitter_id($tweet->id_str, $hi_id);
 	}
 
 	return compact('count', 'lo_id', 'hi_id');
