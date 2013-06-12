@@ -176,7 +176,7 @@ class TweetMirrorSettings {
 			$result = $importer->import_twitter_feed(array(
 				'screen_name' => get_option( self::SCREENNAME_FIELD ),
 				'author' => get_option( self::AUTHOR_FIELD ),
-				'category' => 0,
+				'category' => get_option( self::CATEGORY_FIELD ),
 			));
 			
 			if ( isset( $result['error'] )) {

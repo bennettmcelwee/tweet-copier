@@ -26,13 +26,15 @@ public function import_twitter_feed( $params ) {
 		'user_secret'     => TWITTER_USER_SECRET,
 	));
 
-	$method = "https://api.twitter.com/1.1/statuses/user_timeline.json";
-	$params = array(
-		'count' => 3,
-		'screen_name' => $params['screen_name'],
-		'trim_user' => true,
-	);
-	$twitter_api->request( 'GET', $method, $params );
+	$twitter_api->request(
+		'GET',
+		'https://api.twitter.com/1.1/statuses/user_timeline.json',
+		array(
+			'count' => 3,
+			'screen_name' => $params['screen_name'],
+			'trim_user' => true,
+			)
+		);
 	//tmhUtilities::pr( $twitter_api->response );
 
 	//error_log( 'code ' . $twitter_api->response['code'] );
@@ -78,8 +80,8 @@ private function import_tweets($params, $tweet_list) {
 		$processed_text = $plain_text;
 
 		//if ($twitter_account['names_clickable'] == 1) {
-			$processed_text = preg_replace("~@(\w+)~", "<a href=\"http://www.twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
-			$processed_text = preg_replace("~^(\w+):~", "<a href=\"http://www.twitter.com/\\1\" target=\"_blank\">@\\1</a>:", $processed_text);
+			$processed_text = preg_replace("~@(\w+)~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
+			$processed_text = preg_replace("~^(\w+):~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>:", $processed_text);
 		//}
 
 		//if ($twitter_account['hashtags_clickable'] == 1) {
