@@ -10,6 +10,7 @@ class TweetMirrorSettings {
 	const SCREENNAME_FIELD = 'tweet_mirror_screenname';
 	const POSTTYPE_FIELD = 'tweet_mirror_posttype';
 	const CATEGORY_FIELD = 'tweet_mirror_category';
+	const SCHEDULE_FIELD = 'tweet_mirror_schedule';
 	const AUTHOR_FIELD = 'tweet_mirror_author';
 
 	private $dir;
@@ -33,7 +34,7 @@ class TweetMirrorSettings {
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
 		
 		// Handle the Import Now button
-		add_filter( 'pre_update_option_tweet_mirror_import_now' , array( &$this , 'import_now_filter' ) );
+		add_filter( 'pre_update_option_tweet_mirror_import_now' , array( &$this , 'import_now_filter' ), 10, 2 );
 		
 	}
 	
@@ -57,6 +58,10 @@ class TweetMirrorSettings {
 		add_settings_field( self::SCREENNAME_FIELD, __( 'Screen name:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'settings_field_string' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::SCREENNAME_FIELD, 'description' => 'Screen name of Twitter account to mirror', 'label_for' => self::SCREENNAME_FIELD ) );
+		add_settings_field( self::SCHEDULE_FIELD, __( 'Schedule:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'settings_field_schedule' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( 'fieldname' => self::SCHEDULE_FIELD, 'description' => 'Schedule for fetching tweets to mirror', 'label_for' => self::SCHEDULE_FIELD ) );
+
 		add_settings_field( self::AUTHOR_FIELD, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'settings_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::AUTHOR_FIELD, 'description' => 'WordPress author to use for mirrored tweets', 'label_for' => self::AUTHOR_FIELD ) );
@@ -66,6 +71,7 @@ class TweetMirrorSettings {
 		
 		// register_setting( $option_group, $option_name, $sanitize_callback );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCREENNAME_FIELD , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::CATEGORY_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , 'tweet_mirror_import_now' );
@@ -84,6 +90,26 @@ class TweetMirrorSettings {
 		}
 		echo '<input id="' . $fieldname . '" type="text" name="' . $fieldname . '" value="' . $value . '"/>
 				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+	}
+
+	public function settings_field_schedule( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
+		}
+		$schedules = wp_get_schedules();
+
+		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
+		foreach ( $schedules as $schedule => $schedule_desc ) {
+			$selected = ( $value == $schedule ) ? 'selected="selected"' : '';
+			echo '<option value="' . $schedule . '" ' . $selected . '>' . $schedule_desc['display'] . '</option>';
+		}
+		echo '</select>';
+		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
 	public function settings_field_author( $args ) {
