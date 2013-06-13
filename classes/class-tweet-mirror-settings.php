@@ -8,10 +8,11 @@ class TweetMirrorSettings {
 	const MIRRORING_SECTION = 'tweet_mirror_main_settings';
 
 	const SCREENNAME_FIELD = 'tweet_mirror_screenname';
+	const SCHEDULE_FIELD = 'tweet_mirror_schedule';
 	const POSTTYPE_FIELD = 'tweet_mirror_posttype';
 	const CATEGORY_FIELD = 'tweet_mirror_category';
-	const SCHEDULE_FIELD = 'tweet_mirror_schedule';
 	const AUTHOR_FIELD = 'tweet_mirror_author';
+	const IMPORTNOW_FIELD = 'tweet_mirror_import_now';
 
 	private $dir;
 	private $file;
@@ -33,8 +34,9 @@ class TweetMirrorSettings {
 		// Add settings link to plugins page
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
 		
-		// Handle the Import Now button
-		add_filter( 'pre_update_option_tweet_mirror_import_now' , array( &$this , 'import_now_filter' ), 10, 2 );
+		// Set up filters to run actions as settings are saved
+		add_filter( 'pre_update_option_' . self::SCHEDULE_FIELD , array( &$this , 'filter_schedule' ), 10, 2 );
+		add_filter( 'pre_update_option_' . self::IMPORTNOW_FIELD , array( &$this , 'filter_import_now' ), 10, 2 );
 		
 	}
 	
@@ -56,17 +58,17 @@ class TweetMirrorSettings {
 		
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
 		add_settings_field( self::SCREENNAME_FIELD, __( 'Screen name:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'settings_field_string' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::SCREENNAME_FIELD, 'description' => 'Screen name of Twitter account to mirror', 'label_for' => self::SCREENNAME_FIELD ) );
 		add_settings_field( self::SCHEDULE_FIELD, __( 'Schedule:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'settings_field_schedule' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( &$this , 'render_field_schedule' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::SCHEDULE_FIELD, 'description' => 'Schedule for fetching tweets to mirror', 'label_for' => self::SCHEDULE_FIELD ) );
 
 		add_settings_field( self::AUTHOR_FIELD, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'settings_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::AUTHOR_FIELD, 'description' => 'WordPress author to use for mirrored tweets', 'label_for' => self::AUTHOR_FIELD ) );
 		add_settings_field( self::CATEGORY_FIELD, __( 'Category:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'settings_field_category' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( &$this , 'render_field_category' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::CATEGORY_FIELD, 'description' => 'Category to use for mirrored tweets', 'label_for' => self::CATEGORY_FIELD ) );
 		
 		// register_setting( $option_group, $option_name, $sanitize_callback );
@@ -74,12 +76,12 @@ class TweetMirrorSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::CATEGORY_FIELD , array( &$this , 'sanitize_slug' ) );
-		register_setting( self::SETTINGS_OPTION_GROUP , 'tweet_mirror_import_now' );
+		register_setting( self::SETTINGS_OPTION_GROUP , self::IMPORTNOW_FIELD );
 	}
 
 	public function main_settings() { echo '<p>' . __( 'Change these settings to do cool stuff.' , 'tweet_mirror_textdomain' ) . '</p>'; }
 
-	public function settings_field_string( $args ) {
+	public function render_field_string( $args ) {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
@@ -92,7 +94,7 @@ class TweetMirrorSettings {
 				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
-	public function settings_field_schedule( $args ) {
+	public function render_field_schedule( $args ) {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
@@ -112,7 +114,7 @@ class TweetMirrorSettings {
 		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
-	public function settings_field_author( $args ) {
+	public function render_field_author( $args ) {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
@@ -125,7 +127,7 @@ class TweetMirrorSettings {
 		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
-	public function settings_field_category( $args ) {
+	public function render_field_category( $args ) {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
@@ -163,36 +165,17 @@ class TweetMirrorSettings {
 		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
-	public function sanitize_slug( $slug ) {
-		if( $slug && strlen( $slug ) > 0 && $slug != '' ) {
-			$slug = urlencode( strtolower( str_replace( ' ' , '-' , $slug ) ) );
+	public function filter_schedule( $newvalue, $oldvalue ) {
+		if ( $newvalue !== $oldvalue ) {
+			add_settings_error('general', 'tweets_imported', 'Scheduling skipped', 'updated');
+			//TODO
+			//wp_clear_scheduled_hook( 'tweet_mirror_schedule' );
+			//wp_schedule_event( time(), $newvalue, 'tweet_mirror_schedule' );
 		}
-		return $slug;
+		return $newvalue;
 	}
 
-	public function settings_page() {
-
-		echo '<div class="wrap">
-				<div class="icon32" id="icon-options-general"><br/></div>
-				<h2>Tweet Mirror Settings</h2>
-				<form method="post" action="options.php" enctype="multipart/form-data">';
-
-				// settings_fields( $option_group )
-				settings_fields( self::SETTINGS_OPTION_GROUP );
-				// do_settings_sections( $page )
-				do_settings_sections( self::SETTINGS_PAGE );
-
-				submit_button( __( 'Save Settings' , 'tweet_mirror_textdomain' ) );
-				
-				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', 'tweet_mirror_import_now' );
-				
-				
-		echo '</form>
-			  </div>';
-	}
-	
-//	pre_update_option_tweet_mirror_import_now
-	public function import_now_filter( $newvalue, $oldvalue ) {
+	public function filter_import_now( $newvalue, $oldvalue ) {
 		// If there's a new value then this button was clicked, so do the import
 		if ( $newvalue != '' ) {
 			$importer = new Tweet_Importer( 'tweet_mirror' );
@@ -215,4 +198,32 @@ class TweetMirrorSettings {
 		return $oldvalue;
 	}
 
+	public function sanitize_slug( $slug ) {
+		if( $slug && strlen( $slug ) > 0 && $slug != '' ) {
+			$slug = urlencode( strtolower( str_replace( ' ' , '-' , $slug ) ) );
+		}
+		return $slug;
+	}
+
+	public function settings_page() {
+
+		echo '<div class="wrap">
+				<div class="icon32" id="icon-options-general"><br/></div>
+				<h2>Tweet Mirror Settings</h2>
+				<form method="post" action="options.php" enctype="multipart/form-data">';
+
+				// settings_fields( $option_group )
+				settings_fields( self::SETTINGS_OPTION_GROUP );
+				// do_settings_sections( $page )
+				do_settings_sections( self::SETTINGS_PAGE );
+
+				submit_button( __( 'Save Settings' , 'tweet_mirror_textdomain' ) );
+				
+				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', self::IMPORTNOW_FIELD );
+				
+				
+		echo '</form>
+			  </div>';
+	}
+	
 }
