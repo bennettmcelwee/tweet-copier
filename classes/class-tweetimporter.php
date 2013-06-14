@@ -17,7 +17,16 @@ public function __construct($namespace) {
 	}
 }
 
-public function import_twitter_feed( $params ) {
+/**
+$params is an array:
+	screen_name
+	since_id (optional)
+	max_id (optional)
+returns an array
+	tweets
+	error
+*/
+public function get_twitter_feed( $params ) {
 
 	$twitter_api = new tmhOAuth(array(
 		'consumer_key'    => TWITTER_CONSUMER_KEY,
@@ -26,15 +35,19 @@ public function import_twitter_feed( $params ) {
 		'user_secret'     => TWITTER_USER_SECRET,
 	));
 
-	$twitter_api->request(
-		'GET',
-		'https://api.twitter.com/1.1/statuses/user_timeline.json',
-		array(
+	$twitter_params = array(
 			'count' => 3,
 			'screen_name' => $params['screen_name'],
 			'trim_user' => true,
-			)
-		);
+			);
+	if (isset( $params['since_id'] )) {
+		$twitter_params['since_id'] = $params['since_id'];
+	}
+	if (isset( $params['max_id'] )) {
+		$twitter_params['max_id'] = $params['max_id'];
+	}
+	error_log( 'Twitter request: ' . print_r( $twitter_params, true ) );
+	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
 	//tmhUtilities::pr( $twitter_api->response );
 
 	//error_log( 'code ' . $twitter_api->response['code'] );
@@ -44,19 +57,32 @@ public function import_twitter_feed( $params ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
 		//error_log( 'tweets ' . print_r( $tweet_list, true ) );
-		return $this->import_tweets( $params, $tweet_list );
+		return array(
+			'tweets' => $tweet_list,
+			'error' => null,
+			);
 	} else {
-		return array( 'count' => 0,
-					  'error' => 'Twitter API: '
-						. "code [{$twitter_api->response['code']}] "
-						. "errno [{$twitter_api->response['errno']}] "
-						. "error [{$twitter_api->response['error']}]",
-					);
+		return array(
+			'tweets' => null,
+			'error' => 'Twitter API: '
+				. "code [{$twitter_api->response['code']}] "
+				. "errno [{$twitter_api->response['errno']}] "
+				. "error [{$twitter_api->response['error']}]",
+			);
 	}
 }
 
 
-private function import_tweets($params, $tweet_list) {
+/**
+$params is an array:
+	author
+	category
+returns an array
+	count
+	lo_id
+	hi_id
+*/
+public function import_tweets($tweet_list, $params) {
 
 	$count = 0;
 	$lo_id = null;
@@ -68,14 +94,6 @@ private function import_tweets($params, $tweet_list) {
 		}
 
 		$plain_text = iconv( "UTF-8", "ISO-8859-1//IGNORE", $tweet->text );
-
-		// Extract the author and the message
-		$tweet_author = trim(preg_replace("~^(\w+):(.*?)$~", "\\1", $plain_text));
-		$text_only    = trim(preg_replace("~^(\w+):~", "", $plain_text));
-
-		//if ($twitter_account['strip_name'] == 1) {
-			$plain_text = $text_only;
-		//}
 
 		$processed_text = $plain_text;
 
@@ -91,7 +109,7 @@ private function import_tweets($params, $tweet_list) {
 		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);
 		$processed_text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $processed_text);
 
-		$new_post = array('post_title' => trim( substr( $text_only, 0, 25 ) . '...' ),
+		$new_post = array('post_title' => trim( substr( $plain_text, 0, 25 ) . '...' ),
 						  'post_content' => trim( $processed_text ),
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
@@ -105,7 +123,7 @@ private function import_tweets($params, $tweet_list) {
 		}
 		$new_post_id = wp_insert_post($new_post);
 
-		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $tweet_author, true); 
+		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $params['screen_name'], true); 
 		add_post_meta ($new_post_id, 'tweetimport_date_imported', date ('Y-m-d H:i:s'), true);
 		add_post_meta ($new_post_id, 'tweetimport_twitter_id', $tweet->id_str, true);
 

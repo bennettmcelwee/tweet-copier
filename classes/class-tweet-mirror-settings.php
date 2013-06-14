@@ -176,26 +176,52 @@ class TweetMirrorSettings {
 	}
 
 	public function filter_import_now( $newvalue, $oldvalue ) {
+
+		// HACK: updated options are available here, but only because this button comes after the form fields.
 		// If there's a new value then this button was clicked, so do the import
 		if ( $newvalue != '' ) {
-			$importer = new Tweet_Importer( 'tweet_mirror' );
-			
-			// HACK: updated options are available here, but only because this button comes after the form fields.
-			
-			$result = $importer->import_twitter_feed(array(
-				'screen_name' => get_option( self::SCREENNAME_FIELD ),
-				'author' => get_option( self::AUTHOR_FIELD ),
-				'category' => get_option( self::CATEGORY_FIELD ),
-			));
-			
-			if ( isset( $result['error'] )) {
-				add_settings_error('general', 'tweets_imported', __('Error: ') . $result['error'], 'error');
-			} else {
-				add_settings_error('general', 'tweets_imported', 'Imported ' . $result['count'] . ' tweets from @' . get_option( self::SCREENNAME_FIELD ), 'updated');
-			}
+			$this->import_tweets();
 		}
 		// Return the old value so it doesn't get saved
 		return $oldvalue;
+	}
+
+	public function import_tweets() {
+
+		$screen_name = get_option( self::SCREENNAME_FIELD );
+		$twitter_params = array(
+			'screen_name' => $screen_name,
+		);
+		// Only get new tweets
+		$query = new WP_Query( array(
+			// tweets by this user
+			'meta_key' => 'tweetimport_twitter_author',
+			'meta_value' => $screen_name,
+			// Get the oldest
+			'orderby' => 'date',
+			'order' => 'DESC',
+			'posts_per_page' => 1,
+		));
+		error_log( 'Query: ' . print_r( $query, true ) );
+
+		if ( $query->have_posts()) {
+			$post = $query->next_post();
+			$twitter_params['since_id'] = get_metadata('post', $post->ID, 'tweetimport_twitter_id', true );
+		}
+		
+		$importer = new Tweet_Importer( 'tweet_mirror' );
+		$twitter_result = $importer->get_twitter_feed($twitter_params);
+		if ( isset( $twitter_result['error'] )) {
+			add_settings_error('general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error');
+		} else {
+			error_log( 'Tweets: ' . print_r( $twitter_result['tweets'], true ) );
+			$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
+				'screen_name' => $screen_name,
+				'author' => get_option( self::AUTHOR_FIELD ),
+				'category' => get_option( self::CATEGORY_FIELD ),
+			));
+			add_settings_error('general', 'tweets_imported', 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name, 'updated');
+		}
 	}
 
 	public function sanitize_slug( $slug ) {
