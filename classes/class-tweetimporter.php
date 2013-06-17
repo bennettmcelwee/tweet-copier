@@ -83,11 +83,7 @@ private function import_tweets($params, $tweet_list) {
 		//}
 
 		//if ($twitter_account['hashtags_clickable'] == 1) {
-			//if ($twitter_account['hashtags_clickable_twitter'] == 1) {
-				$processed_text = preg_replace("/#(\w+)/", "<a href=\"http://search.twitter.com/search?q=\\1\" target=\"_blank\">#\\1</a>", $processed_text);
-			//} else {
-			//	$processed_text = preg_replace("/#(\w+)/", "<a href=\"" . skinju_get_tag_link("\\1") . "\">#\\1</a>", $processed_text);
-			//}
+			$processed_text = preg_replace("/#(\w+)/", "<a href=\"https://twitter.com/search?q=%23\\1&amp;src=hash\" target=\"_blank\">#\\1</a>", $processed_text);
 		//}
 
 		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);

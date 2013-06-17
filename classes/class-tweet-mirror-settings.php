@@ -59,15 +59,19 @@ class TweetMirrorSettings {
 			array( 'fieldname' => self::SCREENNAME_FIELD, 'description' => 'Screen name of Twitter account to mirror', 'label_for' => self::SCREENNAME_FIELD ) );
 		add_settings_field( self::AUTHOR_FIELD, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'settings_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::AUTHOR_FIELD, 'description' => 'Author to use for mirrored tweets', 'label_for' => self::AUTHOR_FIELD ) );
+			array( 'fieldname' => self::AUTHOR_FIELD, 'description' => 'WordPress author to use for mirrored tweets', 'label_for' => self::AUTHOR_FIELD ) );
+		add_settings_field( self::CATEGORY_FIELD, __( 'Category:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'settings_field_category' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( 'fieldname' => self::CATEGORY_FIELD, 'description' => 'Category to use for mirrored tweets', 'label_for' => self::CATEGORY_FIELD ) );
 		
 		// register_setting( $option_group, $option_name, $sanitize_callback );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCREENNAME_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_FIELD , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , self::CATEGORY_FIELD , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , 'tweet_mirror_import_now' );
 	}
 
-	public function main_settings() { echo '<p>' . __( 'Change these settings ot customise your plugin.' , 'tweet_mirror_textdomain' ) . '</p>'; }
+	public function main_settings() { echo '<p>' . __( 'Change these settings to do cool stuff.' , 'tweet_mirror_textdomain' ) . '</p>'; }
 
 	public function settings_field_string( $args ) {
 
@@ -92,6 +96,44 @@ class TweetMirrorSettings {
 			$value = $option;
 		}
 		wp_dropdown_users( array( 'id' => $fieldname, 'name' => $fieldname, 'selected' => $value ) );
+		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+	}
+
+	public function settings_field_category( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
+		}
+
+		$categories = get_categories( 'hide_empty=0' );
+
+		// Figure out which category should be initially selected
+		if ( $value != '' ) {
+			$selected_id = $value;
+		} else {
+			$selected_id = 1; // default
+			foreach ( $categories as $category ) {
+				$cat_name = ! empty($category->name) ? $category->name : $category->cat_name;
+				if ($cat_name == 'Twitter' || $cat_name == 'Tweets' || $cat_name == 'Tweet') {
+					$cat_id = ! empty($category->term_id) ? $category->term_id : $category->cat_ID;
+					$selected_id = $cat_id;
+					break;
+				}
+			}
+		}
+
+		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
+		foreach ( $categories as $category ) {
+			$cat_id = ! empty($category->term_id) ? $category->term_id : $category->cat_ID;
+			$cat_name = ! empty($category->name) ? $category->name : $category->cat_name;
+			$selected = ($cat_id == $selected_id) ? 'selected="selected"' : '';
+			echo '<option value="' . $cat_id . '" ' . $selected . '>' . $cat_name . '</option>';
+		}
+		echo '</select>';
 		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
