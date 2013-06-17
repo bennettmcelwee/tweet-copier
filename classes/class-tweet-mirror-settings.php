@@ -208,6 +208,8 @@ class TweetMirrorSettings {
 	public function import_tweets() {
 
 		$screen_name = get_option( self::SCREENNAME_OPTION );
+		$importer = new Tweet_Importer( 'tweet_mirror' );
+
 		$twitter_params = array(
 			'screen_name' => $screen_name,
 		);
@@ -215,13 +217,8 @@ class TweetMirrorSettings {
 		if ( isset( $latest_tweet_id )) {
 			$twitter_params['since_id'] = $newest_tweet_id;
 		}
-		//$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
-		//if ( isset( $oldest_tweet_id )) {
-		//	$twitter_params['max_id'] = $oldest_tweet_id;
-		//}
 		
-		$importer = new Tweet_Importer( 'tweet_mirror' );
-		$twitter_result = $importer->get_twitter_feed($twitter_params);
+		$twitter_result = $importer->get_twitter_feed( $twitter_params );
 		if ( isset( $twitter_result['error'] )) {
 			add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
 			$this->log( 'last_error', $twitter_result['error'] );
@@ -234,7 +231,43 @@ class TweetMirrorSettings {
 			));
 			$log_message = 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name;
 			add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-			$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message);
+			$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
+		}
+		
+		if ( get_option( self::HISTORY_OPTION )) {
+			$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
+			if ( isset( $oldest_tweet_id )) {
+				// Some tweets are already imported, so we fetch any older tweets if we can
+				// Note we'll always get at least one tweet, which is the oldest one we already have.
+				$twitter_params = array(
+					'screen_name' => $screen_name,
+					'max_id' => $oldest_tweet_id,
+				);
+				$twitter_result = $importer->get_twitter_feed( $twitter_params );
+				if ( isset( $twitter_result['error'] )) {
+					add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
+					$this->log( 'last_error', $twitter_result['error'] );
+				} else {
+					if ( $twitter_result['tweets'] === 1 ) {
+						// We only got one tweet, so no history is left
+						set_option( self::HISTORY_OPTION, false );
+						set_option( self::HISTORY_COMPLETE_OPTION, true );
+						$log_message = 'No more tweet history to mirror from @' . $screen_name;
+						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
+						$this->log( 'last_empty', $log_message );
+					} else {
+						error_log( 'Tweet history: ' . print_r( $twitter_result['tweets'], true ) );
+						$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
+							'screen_name' => $screen_name,
+							'author' => get_option( self::AUTHOR_OPTION ),
+							'category' => get_option( self::CATEGORY_OPTION ),
+						));
+						$log_message = 'Imported ' . $import_result['count'] . ' tweets (history) from @' . $screen_name;
+						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
+						$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
+					}
+				}
+			}
 		}
 	}
 
