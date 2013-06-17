@@ -105,8 +105,8 @@ class TweetMirrorSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$selected = ( $option ? ' selected="selected" ' : ' ');
-		echo '<input id="' . $fieldname . '" type="checkbox" name="' . $fieldname . '" ' . $selected . '/>
+		$checked = ( $option ? ' checked="checked" ' : ' ');
+		echo '<input id="' . $fieldname . '" type="checkbox" name="' . $fieldname . '" ' . $checked . '/>
 				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 		if ( get_option( self::HISTORY_COMPLETE_OPTION )) {
 			echo '<span class="description">' . __( 'There are currently no historical tweets left to mirror.' , 'tweet_mirror_textdomain' ) . '</span>';
@@ -215,10 +215,10 @@ class TweetMirrorSettings {
 		if ( isset( $latest_tweet_id )) {
 			$twitter_params['since_id'] = $newest_tweet_id;
 		}
-		$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
-		if ( isset( $oldest_tweet_id )) {
-			$twitter_params['max_id'] = $oldest_tweet_id;
-		}
+		//$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
+		//if ( isset( $oldest_tweet_id )) {
+		//	$twitter_params['max_id'] = $oldest_tweet_id;
+		//}
 		
 		$importer = new Tweet_Importer( 'tweet_mirror' );
 		$twitter_result = $importer->get_twitter_feed($twitter_params);
@@ -279,7 +279,7 @@ class TweetMirrorSettings {
 			// tweets by this user
 			'meta_key' => 'tweetimport_twitter_author',
 			'meta_value' => $screen_name,
-			// Get the oldest
+			// Get the tweet at the limit
 			'orderby' => 'date',
 			'order' => ( $newest_or_oldest === 'newest' ? 'DESC' : 'ASC' ),
 			'posts_per_page' => 1,
