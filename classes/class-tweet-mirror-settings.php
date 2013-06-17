@@ -212,7 +212,8 @@ class TweetMirrorSettings {
 		$importer = new Tweet_Importer( 'tweet_mirror' );
 		$twitter_result = $importer->get_twitter_feed($twitter_params);
 		if ( isset( $twitter_result['error'] )) {
-			add_settings_error('general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error');
+			add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
+			$this->log( 'last_error', $twitter_result['error'] );
 		} else {
 			error_log( 'Tweets: ' . print_r( $twitter_result['tweets'], true ) );
 			$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
@@ -220,7 +221,9 @@ class TweetMirrorSettings {
 				'author' => get_option( self::AUTHOR_FIELD ),
 				'category' => get_option( self::CATEGORY_FIELD ),
 			));
-			add_settings_error('general', 'tweets_imported', 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name, 'updated');
+			$log_message = 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name;
+			add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
+			$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message);
 		}
 	}
 
@@ -248,8 +251,24 @@ class TweetMirrorSettings {
 				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', self::IMPORTNOW_FIELD );
 				
 				
-		echo '</form>
-			  </div>';
+		echo '</form>';
+		echo '<h3 class="title">Recent Results</h2>
+			<table>
+				<tr><th style="text-align: left;">Last empty</th><td>'  . get_option( 'tweet_mirror_last_empty' ) . '</td</tr>
+				<tr><th style="text-align: left;">Last import</th><td>' . get_option( 'tweet_mirror_last_import' ) . '</td</tr>
+				<tr><th style="text-align: left;">Last error</th><td>'  . get_option( 'tweet_mirror_last_error' ) . '</td</tr>
+			</table>';
+
+		echo '</div>';
 	}
 	
+	private function log( $category, $message ) {
+		$category = 'tweet_mirror_' . $category;
+		$message = current_time( 'mysql' ) . ' ' . $message;
+		if ( ! add_option( $category, $message, '', 'no' )) {
+			// option already exists. Update it
+			update_option( $category, $message );
+		}
+	}
+
 }
