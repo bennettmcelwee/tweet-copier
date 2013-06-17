@@ -151,10 +151,12 @@ function stop_duplicates($tweet)
 	$posts = $wpdb->get_var ($wpdb->prepare ("SELECT COUNT(*) FROM $wpdb->postmeta 
                                               WHERE meta_key = 'tweetimport_twitter_id'
                                               AND meta_value = '%s'", $tweet->id_str));
-
-
-	if ($posts > 0)  return false;
-	else return $tweet;
+	if ( 0 < $posts ) {
+		error_log( 'Skipped duplicate: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ) );
+		return false;
+	} else {
+		return $tweet;
+	}
 }
 
 

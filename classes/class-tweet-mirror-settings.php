@@ -10,8 +10,10 @@ class TweetMirrorSettings {
 	const SCREENNAME_OPTION = 'tweet_mirror_screenname';
 	const SCHEDULE_OPTION = 'tweet_mirror_schedule';
 	const POSTTYPE_OPTION = 'tweet_mirror_posttype';
-	const CATEGORY_OPTION = 'tweet_mirror_category';
 	const AUTHOR_OPTION = 'tweet_mirror_author';
+	const CATEGORY_OPTION = 'tweet_mirror_category';
+	const HISTORY_OPTION = 'tweet_mirror_history';
+	const HISTORY_COMPLETE_OPTION = 'tweet_mirror_history_conplete';
 	const IMPORTNOW_OPTION = 'tweet_mirror_import_now';
 
 	private $dir;
@@ -63,6 +65,9 @@ class TweetMirrorSettings {
 		add_settings_field( self::SCHEDULE_OPTION, __( 'Schedule:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'render_field_schedule' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::SCHEDULE_OPTION, 'description' => 'Schedule for fetching tweets to mirror', 'label_for' => self::SCHEDULE_OPTION ) );
+		add_settings_field( self::HISTORY_OPTION, __( 'Import entire history?' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_history' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( 'fieldname' => self::HISTORY_OPTION, 'description' => 'Mirror historical tweets as well as new ones?', 'label_for' => self::HISTORY_OPTION ) );
 
 		add_settings_field( self::AUTHOR_OPTION, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
@@ -73,6 +78,7 @@ class TweetMirrorSettings {
 		
 		// register_setting( $option_group, $option_name, $sanitize_callback );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , self::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::CATEGORY_OPTION , array( &$this , 'sanitize_slug' ) );
@@ -92,6 +98,19 @@ class TweetMirrorSettings {
 		}
 		echo '<input id="' . $fieldname . '" type="text" name="' . $fieldname . '" value="' . $value . '"/>
 				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+	}
+
+	public function render_field_history( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$selected = ( $option ? ' selected="selected" ' : ' ');
+		echo '<input id="' . $fieldname . '" type="checkbox" name="' . $fieldname . '" ' . $selected . '/>
+				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+		if ( get_option( self::HISTORY_COMPLETE_OPTION )) {
+			echo '<span class="description">' . __( 'There are currently no historical tweets left to mirror.' , 'tweet_mirror_textdomain' ) . '</span>';
+		}
 	}
 
 	public function render_field_schedule( $args ) {
@@ -192,21 +211,13 @@ class TweetMirrorSettings {
 		$twitter_params = array(
 			'screen_name' => $screen_name,
 		);
-		// Only get new tweets
-		$query = new WP_Query( array(
-			// tweets by this user
-			'meta_key' => 'tweetimport_twitter_author',
-			'meta_value' => $screen_name,
-			// Get the oldest
-			'orderby' => 'date',
-			'order' => 'DESC',
-			'posts_per_page' => 1,
-		));
-		error_log( 'Query: ' . print_r( $query, true ) );
-
-		if ( $query->have_posts()) {
-			$post = $query->next_post();
-			$twitter_params['since_id'] = get_metadata('post', $post->ID, 'tweetimport_twitter_id', true );
+		$newest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'newest' );
+		if ( isset( $latest_tweet_id )) {
+			$twitter_params['since_id'] = $newest_tweet_id;
+		}
+		$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
+		if ( isset( $oldest_tweet_id )) {
+			$twitter_params['max_id'] = $oldest_tweet_id;
 		}
 		
 		$importer = new Tweet_Importer( 'tweet_mirror' );
@@ -262,6 +273,25 @@ class TweetMirrorSettings {
 		echo '</div>';
 	}
 	
+	private function get_tweet_id_limit( $screen_name, $newest_or_oldest ) {
+
+		$query = new WP_Query( array(
+			// tweets by this user
+			'meta_key' => 'tweetimport_twitter_author',
+			'meta_value' => $screen_name,
+			// Get the oldest
+			'orderby' => 'date',
+			'order' => ( $newest_or_oldest === 'newest' ? 'DESC' : 'ASC' ),
+			'posts_per_page' => 1,
+		));
+		// error_log( 'Query: ' . print_r( $query, true ) );
+		if ( $query->have_posts()) {
+			$post = $query->next_post();
+			return get_metadata('post', $post->ID, 'tweetimport_twitter_id', true );
+		}
+		return null;
+	}
+
 	private function log( $category, $message ) {
 		$category = 'tweet_mirror_' . $category;
 		$message = current_time( 'mysql' ) . ' ' . $message;
