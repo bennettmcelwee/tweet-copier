@@ -214,7 +214,8 @@ class TweetMirrorSettings {
 			'screen_name' => $screen_name,
 		);
 		$newest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'newest' );
-		if ( isset( $latest_tweet_id )) {
+		error_log( "newest_tweet_id: $newest_tweet_id" );
+		if ( isset( $newest_tweet_id )) {
 			$twitter_params['since_id'] = $newest_tweet_id;
 		}
 		
@@ -236,6 +237,7 @@ class TweetMirrorSettings {
 		
 		if ( get_option( self::HISTORY_OPTION )) {
 			$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
+			error_log( "oldest_tweet_id: $oldest_tweet_id" );
 			if ( isset( $oldest_tweet_id )) {
 				// Some tweets are already imported, so we fetch any older tweets if we can
 				// Note we'll always get at least one tweet, which is the oldest one we already have.
@@ -248,10 +250,10 @@ class TweetMirrorSettings {
 					add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
 					$this->log( 'last_error', $twitter_result['error'] );
 				} else {
-					if ( $twitter_result['tweets'] === 1 ) {
+					if ( count( $twitter_result['tweets'] ) === 1 ) {
 						// We only got one tweet, so no history is left
-						set_option( self::HISTORY_OPTION, false );
-						set_option( self::HISTORY_COMPLETE_OPTION, true );
+						update_option( self::HISTORY_OPTION, false );
+						update_option( self::HISTORY_COMPLETE_OPTION, true );
 						$log_message = 'No more tweet history to mirror from @' . $screen_name;
 						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
 						$this->log( 'last_empty', $log_message );
@@ -262,7 +264,7 @@ class TweetMirrorSettings {
 							'author' => get_option( self::AUTHOR_OPTION ),
 							'category' => get_option( self::CATEGORY_OPTION ),
 						));
-						$log_message = 'Imported ' . $import_result['count'] . ' tweets (history) from @' . $screen_name;
+						$log_message = 'Imported ' . $import_result['count'] . ' historical tweets from @' . $screen_name;
 						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
 						$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
 					}
@@ -320,7 +322,7 @@ class TweetMirrorSettings {
 		// error_log( 'Query: ' . print_r( $query, true ) );
 		if ( $query->have_posts()) {
 			$post = $query->next_post();
-			return get_metadata('post', $post->ID, 'tweetimport_twitter_id', true );
+			return get_metadata( 'post', $post->ID, 'tweetimport_twitter_id', true );
 		}
 		return null;
 	}

@@ -48,9 +48,8 @@ public function get_twitter_feed( $params ) {
 	}
 	error_log( 'Twitter request: ' . print_r( $twitter_params, true ) );
 	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
-	//tmhUtilities::pr( $twitter_api->response );
 
-	//error_log( 'code ' . $twitter_api->response['code'] );
+	error_log( 'code ' . $twitter_api->response['code'] );
 	//error_log( 'response ' . $twitter_api->response['response'] );
 	
 	if ( $twitter_api->response['code'] === 200 ) {
@@ -62,6 +61,7 @@ public function get_twitter_feed( $params ) {
 			'error' => null,
 			);
 	} else {
+		error_log( "Twitter API: code [{$twitter_api->response['code']}] errno [{$twitter_api->response['errno']}] error [{$twitter_api->response['error']}]" );
 		return array(
 			'tweets' => null,
 			'error' => 'Twitter API: '
