@@ -245,6 +245,13 @@ class TweetMirrorSettings {
 	public function import_tweets() {
 
 		$screen_name = get_option( self::SCREENNAME_OPTION );
+		if ( $screen_name == '' ) {
+			$log_message = __('Error: Tweet Mirror settings have not yet been saved');
+			add_settings_error( 'general', 'tweets_imported', log_message, 'error' );
+			$this->log( 'last_error', $log_message );
+			return;
+		}
+
 		$importer = new Tweet_Importer( 'tweet_mirror' );
 
 		$twitter_params = array(
