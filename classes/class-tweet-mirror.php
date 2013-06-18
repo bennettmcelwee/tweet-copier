@@ -17,6 +17,11 @@ class TweetMirror {
 		// Handle localisation
 		$this->load_plugin_textdomain();
 		add_action( 'init', array( &$this, 'load_localisation' ), 0 );
+
+		// Handle post types
+		add_action( 'init', array( &$this, 'create_tweet_post_type' ), 0 );
+		add_action( 'pre_get_posts', array( &$this, 'add_tweet_post_types_to_query' ) );
+
 	}
 	
 	public function load_localisation () {
@@ -32,4 +37,27 @@ class TweetMirror {
 	    load_plugin_textdomain( $domain , FALSE , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
 	
+	public function create_tweet_post_type() {
+		register_post_type( 'tweetecho_tweet',
+			array(
+				'labels' => array(
+					'singular_name' => __( 'Tweet' ),
+					'name' => __( 'Tweets' ),
+				),
+				'public' => true,
+				'has_archive' => true,
+				'rewrite' => array('slug' => 'tweet'),
+			)
+		);
+	}
+
+	function add_tweet_post_types_to_query( $query ) {
+		if ( is_home() && $query->is_main_query() ) {
+			$post_types = $query->get( 'post_type' );
+			$post_types[] = 'tweetecho_tweet';
+			$query->set( 'post_type', $post_types );
+		}
+		return $query;
+	}
+
 }

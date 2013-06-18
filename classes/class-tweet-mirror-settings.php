@@ -72,6 +72,9 @@ class TweetMirrorSettings {
 		add_settings_field( self::AUTHOR_OPTION, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::AUTHOR_OPTION, 'description' => 'WordPress author to use for mirrored tweets', 'label_for' => self::AUTHOR_OPTION ) );
+		add_settings_field( self::POSTTYPE_OPTION, __( 'Post type:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_posttype' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
+			array( 'fieldname' => self::POSTTYPE_OPTION, 'description' => 'WordPress post type to use for mirrored tweets', 'label_for' => self::POSTTYPE_OPTION ) );
 		add_settings_field( self::CATEGORY_OPTION, __( 'Category:' , 'tweet_mirror_textdomain' ) ,
 			array( &$this , 'render_field_category' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
 			array( 'fieldname' => self::CATEGORY_OPTION, 'description' => 'Category to use for mirrored tweets', 'label_for' => self::CATEGORY_OPTION ) );
@@ -143,6 +146,40 @@ class TweetMirrorSettings {
 			$value = $option;
 		}
 		wp_dropdown_users( array( 'id' => $fieldname, 'name' => $fieldname, 'selected' => $value ) );
+		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+	}
+
+	public function render_field_posttype( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
+		}
+
+		$post_types = get_post_types( array( 'public' => true ), 'objects' );
+
+		// Figure out which type should be initially selected
+		$selected_post_type = $value;
+		if ( $value === '' ) {
+			// Pre-select an appropriate type if there is one
+			foreach ( $post_types as $post_type_id => $post_type ) {
+				if ($post_type->label == 'Twitter' || $post_type->label == 'Tweets' || $post_type->label == 'Tweet') {
+					$selected_post_type = $post_type_id;
+					break;
+				}
+			}
+		}
+
+		// Render the list
+		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
+		foreach ( $post_types  as $post_type_id => $post_type ) {
+			$selected = ( $selected_post_type == $post_type_id ) ? 'selected="selected"' : '';
+			echo '<option value="' . $post_type_id . '" ' . $selected . '>' . $post_type->label . '</option>';
+		}
+		echo '</select>';
 		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
