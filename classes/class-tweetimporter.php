@@ -79,14 +79,10 @@ $params is an array:
 	category
 returns an array
 	count
-	lo_id
-	hi_id
 */
 public function import_tweets($tweet_list, $params) {
 
 	$count = 0;
-	$lo_id = null;
-	$hi_id = null;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
 		if (!$tweet) {
@@ -136,11 +132,9 @@ public function import_tweets($tweet_list, $params) {
 		//wp_set_post_tags($new_post_id, implode (',', $out[0]));
 
 		++$count;
-		$lo_id = self::min_twitter_id($tweet->id_str, $lo_id);
-		$hi_id = self::max_twitter_id($tweet->id_str, $hi_id);
 	}
 
-	return compact('count', 'lo_id', 'hi_id');
+	return compact( 'count' );
 }
 
 function stop_duplicates($tweet)
@@ -157,35 +151,6 @@ function stop_duplicates($tweet)
 	} else {
 		return $tweet;
 	}
-}
-
-
-static function max_twitter_id($id1, $id2) {
-	if (is_null($id1)) return $id2;
-	if (is_null($id2)) return $id1;
-	if (strlen($id1) == 0) return $id2;
-	if (strlen($id2) == 0) return $id1;
-	return self::compare_twitter_id($id1, $id2) < 0 ? $id2 : $id1;
-}
-
-static function min_twitter_id($id1, $id2) {
-	if (is_null($id1)) return $id2;
-	if (is_null($id2)) return $id1;
-	if (strlen($id1) == 0) return $id2;
-	if (strlen($id2) == 0) return $id1;
-	return self::compare_twitter_id($id1, $id2) < 0 ? $id1 : $id2;
-}
-
-static function compare_twitter_id($id1, $id2) {
-	// null compares less than non-null
-	if (is_null($id1) && is_null($id2)) return 0;
-	if (is_null($id1)) return 1;
-	if (is_null($id2)) return -1;
-	$len1 = strlen($id1);
-	$len2 = strlen($id2);
-	if ($len1 < $len2) return 1;
-	if ($len2 < $len1) return -1;
-	return strcmp($id1, $id2);
 }
 
 } // class Tweet_Importer
