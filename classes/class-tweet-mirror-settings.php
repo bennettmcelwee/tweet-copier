@@ -5,23 +5,22 @@ class TweetMirrorSettings {
 
 	const SETTINGS_PAGE = 'tweet_mirror_settings';
 	const SETTINGS_OPTION_GROUP = 'tweet_mirror_options1';
-	const MIRRORING_SECTION = 'tweet_mirror_main_settings';
+	const FETCH_SECTION = 'tweet_mirror_fetch_settings';
+	const IMPORT_SECTION = 'tweet_mirror_import_settings';
+	const SCHEDULE_SECTION = 'tweet_mirror_schedule_settings';
 
-	const SCREENNAME_OPTION = 'tweet_mirror_screenname';
+	// These options are used only in the settings page, not by the plugin
 	const SCHEDULE_OPTION = 'tweet_mirror_schedule';
-	const POSTTYPE_OPTION = 'tweet_mirror_posttype';
-	const AUTHOR_OPTION = 'tweet_mirror_author';
-	const CATEGORY_OPTION = 'tweet_mirror_category';
-	const HISTORY_OPTION = 'tweet_mirror_history';
-	const HISTORY_COMPLETE_OPTION = 'tweet_mirror_history_conplete';
 	const IMPORTNOW_OPTION = 'tweet_mirror_import_now';
 
+	private $plugin;
 	private $dir;
 	private $file;
 	private $assets_dir;
 	private $assets_url;
 
-	public function __construct( $file ) {
+	public function __construct( $file, &$plugin ) {
+		$this->plugin = $plugin;
 		$this->dir = dirname( $file );
 		$this->file = $file;
 		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
@@ -56,39 +55,50 @@ class TweetMirrorSettings {
 	public function register_settings() {
 		
 		// add_settings_section( $id, $title, $callback, $page );
-		add_settings_section( self::MIRRORING_SECTION , __( 'Mirroring tweets' , 'tweet_mirror_textdomain' ) , array( &$this , 'main_settings' ) , self::SETTINGS_PAGE );
+		add_settings_section( self::FETCH_SECTION , __( 'Fetching tweets from Twitter' , 'tweet_mirror_textdomain' ) , array( &$this , 'fetch_settings' ) , self::SETTINGS_PAGE );
+		add_settings_section( self::IMPORT_SECTION , __( 'Saving tweets into WordPress' , 'tweet_mirror_textdomain' ) , array( &$this , 'import_settings' ) , self::SETTINGS_PAGE );
+		add_settings_section( self::SCHEDULE_SECTION , __( 'Scheduling' , 'tweet_mirror_textdomain' ) , array( &$this , 'schedule_settings' ) , self::SETTINGS_PAGE );
 		
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
-		add_settings_field( self::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::SCREENNAME_OPTION, 'description' => 'Screen name of Twitter account to mirror', 'label_for' => self::SCREENNAME_OPTION ) );
-		add_settings_field( self::SCHEDULE_OPTION, __( 'Schedule:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'render_field_schedule' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::SCHEDULE_OPTION, 'description' => 'Schedule for fetching tweets to mirror', 'label_for' => self::SCHEDULE_OPTION ) );
-		add_settings_field( self::HISTORY_OPTION, __( 'Import entire history?' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'render_field_history' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::HISTORY_OPTION, 'description' => 'Mirror historical tweets as well as new ones?', 'label_for' => self::HISTORY_OPTION ) );
+		add_settings_field( TweetMirror::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
+			array( 'fieldname' => TweetMirror::SCREENNAME_OPTION, 'description' => 'Screen name of Twitter account to mirror', 'label_for' => TweetMirror::SCREENNAME_OPTION ) );
+		add_settings_field( TweetMirror::HISTORY_OPTION, __( 'Import entire history?' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_history' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
+			array( 'fieldname' => TweetMirror::HISTORY_OPTION, 'description' => 'Mirror historical tweets as well as new ones?' ) );
 
-		add_settings_field( self::AUTHOR_OPTION, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::AUTHOR_OPTION, 'description' => 'WordPress author to use for mirrored tweets', 'label_for' => self::AUTHOR_OPTION ) );
-		add_settings_field( self::POSTTYPE_OPTION, __( 'Post type:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'render_field_posttype' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::POSTTYPE_OPTION, 'description' => 'WordPress post type to use for mirrored tweets', 'label_for' => self::POSTTYPE_OPTION ) );
-		add_settings_field( self::CATEGORY_OPTION, __( 'Category:' , 'tweet_mirror_textdomain' ) ,
-			array( &$this , 'render_field_category' )  , self::SETTINGS_PAGE , self::MIRRORING_SECTION,
-			array( 'fieldname' => self::CATEGORY_OPTION, 'description' => 'Category to use for mirrored tweets', 'label_for' => self::CATEGORY_OPTION ) );
+		add_settings_field( TweetMirror::AUTHOR_OPTION, __( 'Author:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
+			array( 'fieldname' => TweetMirror::AUTHOR_OPTION, 'description' => 'WordPress author to use for mirrored tweets', 'label_for' => TweetMirror::AUTHOR_OPTION ) );
+		add_settings_field( TweetMirror::POSTTYPE_OPTION, __( 'Post type:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_posttype' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
+			array( 'fieldname' => TweetMirror::POSTTYPE_OPTION, 'description' => 'WordPress post type to use for mirrored tweets', 'label_for' => TweetMirror::POSTTYPE_OPTION ) );
+		add_settings_field( TweetMirror::CATEGORY_OPTION, __( 'Category:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_category' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
+			array( 'fieldname' => TweetMirror::CATEGORY_OPTION, 'description' => 'Category to use for mirrored tweets', 'label_for' => TweetMirror::CATEGORY_OPTION ) );
 		
+		add_settings_field( self::SCHEDULE_OPTION, __( 'Schedule:' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_schedule' )  , self::SETTINGS_PAGE , self::SCHEDULE_SECTION,
+			array( 'fieldname' => self::SCHEDULE_OPTION, 'description' => 'Schedule for fetching tweets to mirror', 'label_for' => self::SCHEDULE_OPTION ) );
+		add_settings_field( self::IMPORTNOW_OPTION, __( 'Manual mirror' , 'tweet_mirror_textdomain' ) ,
+			array( &$this , 'render_field_importnow' )  , self::SETTINGS_PAGE , self::SCHEDULE_SECTION,
+			array( 'fieldname' => self::IMPORTNOW_OPTION, 'description' => 'Save settings and mirror tweets right now' ) );
+
 		// register_setting( $option_group, $option_name, $sanitize_callback );
-		register_setting( self::SETTINGS_OPTION_GROUP , self::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
-		register_setting( self::SETTINGS_OPTION_GROUP , self::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetMirror::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetMirror::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetMirror::AUTHOR_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetMirror::POSTTYPE_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetMirror::CATEGORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_OPTION , array( &$this , 'sanitize_slug' ) );
-		register_setting( self::SETTINGS_OPTION_GROUP , self::AUTHOR_OPTION , array( &$this , 'sanitize_slug' ) );
-		register_setting( self::SETTINGS_OPTION_GROUP , self::CATEGORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::IMPORTNOW_OPTION );
 	}
 
-	public function main_settings() { echo '<p>' . __( 'Change these settings to do cool stuff.' , 'tweet_mirror_textdomain' ) . '</p>'; }
+	public function fetch_settings() { echo '<p>' . __( 'How to fetch tweets from Twitter.' , 'tweet_mirror_textdomain' ) . '</p>'; }
+
+	public function import_settings() { echo '<p>' . __( 'How to save tweets into your blog.' , 'tweet_mirror_textdomain' ) . '</p>'; }
+
+	public function schedule_settings() { echo '<p>' . __( 'How often to mirror tweets.' , 'tweet_mirror_textdomain' ) . '</p>'; }
 
 	public function render_field_string( $args ) {
 
@@ -109,31 +119,11 @@ class TweetMirrorSettings {
 		$description = $args['description'];
 		$option = get_option( $fieldname );
 		$checked = ( $option ? ' checked="checked" ' : ' ');
-		echo '<input id="' . $fieldname . '" type="checkbox" name="' . $fieldname . '" ' . $checked . '/>
-				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
-		if ( get_option( self::HISTORY_COMPLETE_OPTION )) {
-			echo '<span class="description">' . __( 'There are currently no historical tweets left to mirror.' , 'tweet_mirror_textdomain' ) . '</span>';
+		echo '<label for="' . $fieldname . '"><input id="' . $fieldname . '" type="checkbox" name="' . $fieldname . '" ' . $checked . '/>
+				<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span></label>';
+		if ( get_option( TweetMirror::HISTORY_COMPLETE_OPTION )) {
+			echo '<span class="description">' . __( ' (There are currently no historical tweets left to mirror.)' , 'tweet_mirror_textdomain' ) . '</span>';
 		}
-	}
-
-	public function render_field_schedule( $args ) {
-
-		$fieldname = $args['fieldname'];
-		$description = $args['description'];
-		$option = get_option( $fieldname );
-		$value = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
-		$schedules = wp_get_schedules();
-
-		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
-		foreach ( $schedules as $schedule => $schedule_desc ) {
-			$selected = ( $value == $schedule ) ? 'selected="selected"' : '';
-			echo '<option value="' . $schedule . '" ' . $selected . '>' . $schedule_desc['display'] . '</option>';
-		}
-		echo '</select>';
-		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
 	public function render_field_author( $args ) {
@@ -221,6 +211,36 @@ class TweetMirrorSettings {
 		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
 	}
 
+	public function render_field_schedule( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '';
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
+		}
+		$schedules = array( 'manual' => array( 'display' => 'Manual only' ))
+		           + wp_get_schedules();
+
+		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
+		foreach ( $schedules as $schedule => $schedule_desc ) {
+			$selected = ( $value == $schedule ) ? 'selected="selected"' : '';
+			echo '<option value="' . $schedule . '" ' . $selected . '>' . $schedule_desc['display'] . '</option>';
+		}
+		echo '</select>';
+		echo '<span class="description">' . __( $description , 'tweet_mirror_textdomain' ) . '</span>';
+	}
+
+	public function render_field_importnow( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		// submit_button( $text, $type, $name, $wrap, $other_attributes )
+		submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', $fieldname, false );
+		echo '<span class="description">' . $description . '</span>';
+	}
+
 	public function filter_schedule( $newvalue, $oldvalue ) {
 		if ( $newvalue !== $oldvalue ) {
 			add_settings_error('general', 'tweets_imported', 'Scheduling skipped', 'updated');
@@ -236,85 +256,10 @@ class TweetMirrorSettings {
 		// HACK: updated options are available here, but only because this button comes after the form fields.
 		// If there's a new value then this button was clicked, so do the import
 		if ( $newvalue != '' ) {
-			$this->import_tweets();
+			$plugin->import_tweets();
 		}
 		// Return the old value so it doesn't get saved
 		return $oldvalue;
-	}
-
-	public function import_tweets() {
-
-		$screen_name = get_option( self::SCREENNAME_OPTION );
-		if ( $screen_name == '' ) {
-			$log_message = __('Error: Tweet Mirror settings have not yet been saved');
-			add_settings_error( 'general', 'tweets_imported', log_message, 'error' );
-			$this->log( 'last_error', $log_message );
-			return;
-		}
-
-		$importer = new Tweet_Importer( 'tweet_mirror' );
-
-		$twitter_params = array(
-			'screen_name' => $screen_name,
-		);
-		$newest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'newest' );
-		error_log( "newest_tweet_id: $newest_tweet_id" );
-		if ( isset( $newest_tweet_id )) {
-			$twitter_params['since_id'] = $newest_tweet_id;
-		}
-		
-		$twitter_result = $importer->get_twitter_feed( $twitter_params );
-		if ( isset( $twitter_result['error'] )) {
-			add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
-			$this->log( 'last_error', $twitter_result['error'] );
-		} else {
-			error_log( 'Tweets: ' . print_r( $twitter_result['tweets'], true ) );
-			$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
-				'screen_name' => $screen_name,
-				'author' => get_option( self::AUTHOR_OPTION ),
-				'category' => get_option( self::CATEGORY_OPTION ),
-			));
-			$log_message = 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name;
-			add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-			$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
-		}
-		
-		if ( get_option( self::HISTORY_OPTION )) {
-			$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
-			error_log( "oldest_tweet_id: $oldest_tweet_id" );
-			if ( isset( $oldest_tweet_id )) {
-				// Some tweets are already imported, so we fetch any older tweets if we can
-				// Note we'll always get at least one tweet, which is the oldest one we already have.
-				$twitter_params = array(
-					'screen_name' => $screen_name,
-					'max_id' => $oldest_tweet_id,
-				);
-				$twitter_result = $importer->get_twitter_feed( $twitter_params );
-				if ( isset( $twitter_result['error'] )) {
-					add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
-					$this->log( 'last_error', $twitter_result['error'] );
-				} else {
-					if ( count( $twitter_result['tweets'] ) === 1 ) {
-						// We only got one tweet, so no history is left
-						update_option( self::HISTORY_OPTION, false );
-						update_option( self::HISTORY_COMPLETE_OPTION, true );
-						$log_message = 'No more tweet history to mirror from @' . $screen_name;
-						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-						$this->log( 'last_empty', $log_message );
-					} else {
-						error_log( 'Tweet history: ' . print_r( $twitter_result['tweets'], true ) );
-						$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
-							'screen_name' => $screen_name,
-							'author' => get_option( self::AUTHOR_OPTION ),
-							'category' => get_option( self::CATEGORY_OPTION ),
-						));
-						$log_message = 'Imported ' . $import_result['count'] . ' historical tweets from @' . $screen_name;
-						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-						$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
-					}
-				}
-			}
-		}
 	}
 
 	public function sanitize_slug( $slug ) {
@@ -335,11 +280,8 @@ class TweetMirrorSettings {
 				settings_fields( self::SETTINGS_OPTION_GROUP );
 				// do_settings_sections( $page )
 				do_settings_sections( self::SETTINGS_PAGE );
-
+				
 				submit_button( __( 'Save Settings' , 'tweet_mirror_textdomain' ) );
-				
-				submit_button( __( 'Import Now' , 'tweet_mirror_textdomain' ), 'secondary', self::IMPORTNOW_OPTION );
-				
 				
 		echo '</form>';
 		echo '<h3 class="title">Recent Results</h2>
@@ -352,32 +294,4 @@ class TweetMirrorSettings {
 		echo '</div>';
 	}
 	
-	private function get_tweet_id_limit( $screen_name, $newest_or_oldest ) {
-
-		$query = new WP_Query( array(
-			// tweets by this user
-			'meta_key' => 'tweetimport_twitter_author',
-			'meta_value' => $screen_name,
-			// Get the tweet at the limit
-			'orderby' => 'date',
-			'order' => ( $newest_or_oldest === 'newest' ? 'DESC' : 'ASC' ),
-			'posts_per_page' => 1,
-		));
-		// error_log( 'Query: ' . print_r( $query, true ) );
-		if ( $query->have_posts()) {
-			$post = $query->next_post();
-			return get_metadata( 'post', $post->ID, 'tweetimport_twitter_id', true );
-		}
-		return null;
-	}
-
-	private function log( $category, $message ) {
-		$category = 'tweet_mirror_' . $category;
-		$message = current_time( 'mysql' ) . ' ' . $message;
-		if ( ! add_option( $category, $message, '', 'no' )) {
-			// option already exists. Update it
-			update_option( $category, $message );
-		}
-	}
-
 }

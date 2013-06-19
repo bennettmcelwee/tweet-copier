@@ -23,12 +23,13 @@ require_once 'lib/tmhOAuth.php';
 require_once 'lib/tmhUtilities.php';
 
 require_once 'classes/class-tweet-mirror.php';
-require_once 'classes/class-tweet-mirror-settings.php';
 require_once 'classes/class-tweetimporter.php';
 
 require_once 'constants.php';
 
 // Instantiate necessary classes
-global $plugin_obj;
-$plugin_obj = new TweetMirror( __FILE__ );
-$plugin_settings_obj = new TweetMirrorSettings( __FILE__ );
+$plugin = new TweetMirror( __FILE__ );
+if (is_admin()) {
+	require_once 'classes/class-tweet-mirror-settings.php';
+	$plugin_settings = new TweetMirrorSettings( __FILE__, $plugin );
+}
