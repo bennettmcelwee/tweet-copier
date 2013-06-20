@@ -11,6 +11,7 @@ class TweetMirrorSettings {
 
 	// These options are used only in the settings page, not by the plugin
 	const SCHEDULE_OPTION = 'tweet_mirror_schedule';
+	const SCHEDULE_VALUE_MANUAL = 'manual';
 	const IMPORTNOW_OPTION = 'tweet_mirror_import_now';
 
 	private $plugin;
@@ -220,7 +221,7 @@ class TweetMirrorSettings {
 		if ( $option && strlen( $option ) > 0 && $option != '' ) {
 			$value = $option;
 		}
-		$schedules = array( 'manual' => array( 'display' => 'Manual only' ))
+		$schedules = array( self::SCHEDULE_VALUE_MANUAL => array( 'display' => 'Manual only' ))
 		           + wp_get_schedules();
 
 		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
@@ -241,22 +242,24 @@ class TweetMirrorSettings {
 		echo '<span class="description">' . $description . '</span>';
 	}
 
+	// Process a change in the filter setting, by updating the scheuld
 	public function filter_schedule( $newvalue, $oldvalue ) {
 		if ( $newvalue !== $oldvalue ) {
-			add_settings_error('general', 'tweets_imported', 'Scheduling skipped', 'updated');
-			//TODO
-			//wp_clear_scheduled_hook( 'tweet_mirror_schedule' );
-			//wp_schedule_event( time(), $newvalue, 'tweet_mirror_schedule' );
+			wp_clear_scheduled_hook( TweetMirror::SCHEDULE_HOOK );
+			if ( $newvalue !== self::SCHEDULE_VALUE_MANUAL ) {
+				wp_schedule_event( time(), $newvalue, TweetMirror::SCHEDULE_HOOK );
+			}
 		}
 		return $newvalue;
 	}
 
+	// Process a click on the Import Now button
 	public function filter_import_now( $newvalue, $oldvalue ) {
 
 		// HACK: updated options are available here, but only because this button comes after the form fields.
 		// If there's a new value then this button was clicked, so do the import
 		if ( $newvalue != '' ) {
-			$plugin->import_tweets();
+			$this->plugin->import_tweets();
 		}
 		// Return the old value so it doesn't get saved
 		return $oldvalue;

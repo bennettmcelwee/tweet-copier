@@ -18,6 +18,8 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+define( 'TWEET_MIRROR_DEBUG', true );
+
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
 require_once 'lib/tmhUtilities.php';
@@ -32,4 +34,17 @@ $plugin = new TweetMirror( __FILE__ );
 if (is_admin()) {
 	require_once 'classes/class-tweet-mirror-settings.php';
 	$plugin_settings = new TweetMirrorSettings( __FILE__, $plugin );
+}
+
+if (TWEET_MIRROR_DEBUG) {
+	define( 'TWEET_MIRROR_DEBUG_FILE', dirname( __FILE__ ) . '/debug.log' );
+	function twmi_debug( $message ) {
+		$message = rtrim( $message );
+		$message = str_replace( "\n", "\n                    ", $message );
+		$message = current_time( 'mysql' ) . ' ' . $message . "\n";
+		error_log( $message, 3, TWEET_MIRROR_DEBUG_FILE );
+	}
+} else {
+	function twmi_debug( $message ) {
+	}
 }

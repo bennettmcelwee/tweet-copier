@@ -8,7 +8,7 @@ const TWITTER_API_USER_TIMELINE_URL = 'https://api.twitter.com/1/statuses/user_t
 /** Namespace prefix, used for hooks */
 private $namespace;
 
-public function __construct($namespace) {
+public function __construct( $namespace ) {
 	$this->namespace = $namespace;
 
 	// Default actions and filters
@@ -28,6 +28,8 @@ returns an array
 */
 public function get_twitter_feed( $params ) {
 
+	twmi_debug( 'Fetch: About to fetch tweets via Twitter API' );
+
 	$twitter_api = new tmhOAuth(array(
 		'consumer_key'    => TWITTER_CONSUMER_KEY,
 		'consumer_secret' => TWITTER_CONSUMER_SECRET,
@@ -46,22 +48,19 @@ public function get_twitter_feed( $params ) {
 	if (isset( $params['max_id'] )) {
 		$twitter_params['max_id'] = $params['max_id'];
 	}
-	error_log( 'Twitter request: ' . print_r( $twitter_params, true ) );
+	twmi_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
 	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
 
-	error_log( 'code ' . $twitter_api->response['code'] );
-	//error_log( 'response ' . $twitter_api->response['response'] );
-	
 	if ( $twitter_api->response['code'] === 200 ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
-		//error_log( 'tweets ' . print_r( $tweet_list, true ) );
+		twmi_debug( 'Fetch: Twitter API OK: count ' . count( $tweet_list ) );
 		return array(
 			'tweets' => $tweet_list,
 			'error' => null,
 			);
 	} else {
-		error_log( "Twitter API: code [{$twitter_api->response['code']}] errno [{$twitter_api->response['errno']}] error [{$twitter_api->response['error']}]" );
+		twmi_debug( "Fetch: Twitter API error: code [{$twitter_api->response['code']}] errno [{$twitter_api->response['errno']}] error [{$twitter_api->response['error']}]" );
 		return array(
 			'tweets' => null,
 			'error' => 'Twitter API: '
@@ -76,12 +75,14 @@ public function get_twitter_feed( $params ) {
 /**
 $params is an array:
 	author
+	posttype
 	category
 returns an array
 	count
 */
 public function import_tweets($tweet_list, $params) {
 
+	twmi_debug( 'Import: About to import tweets. count ' . count( $tweet_list ));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
@@ -93,15 +94,14 @@ public function import_tweets($tweet_list, $params) {
 
 		$processed_text = $plain_text;
 
-		//if ($twitter_account['names_clickable'] == 1) {
-			$processed_text = preg_replace("~@(\w+)~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
-			$processed_text = preg_replace("~^(\w+):~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>:", $processed_text);
-		//}
+		// Hyperlink screen names
+		$processed_text = preg_replace("~@(\w+)~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
+		$processed_text = preg_replace("~^(\w+):~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>:", $processed_text);
 
-		//if ($twitter_account['hashtags_clickable'] == 1) {
-			$processed_text = preg_replace("/#(\w+)/", "<a href=\"https://twitter.com/search?q=%23\\1&amp;src=hash\" target=\"_blank\">#\\1</a>", $processed_text);
-		//}
+		// Hyperlink hashtags
+		$processed_text = preg_replace("/#(\w+)/", "<a href=\"https://twitter.com/search?q=%23\\1&amp;src=hash\" target=\"_blank\">#\\1</a>", $processed_text);
 
+		// Hyperlink URLs
 		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);
 		$processed_text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $processed_text);
 
@@ -110,27 +110,20 @@ public function import_tweets($tweet_list, $params) {
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_author' => $params['author'],
+						  'post_type' => $params['posttype'],
 						  'post_category' => array($params['category']),
 						  'post_status' => 'publish');
-
 		$new_post = apply_filters($this->namespace . '_new_post_before_create', $new_post); // Offer the chance to manipulate new post data. return false to skip
 		if (!$new_post) {
 			continue;
 		}
 		$new_post_id = wp_insert_post($new_post);
 
+		add_post_meta ($new_post_id, 'tweetimport_twitter_id', $tweet->id_str, true);
 		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $params['screen_name'], true); 
 		add_post_meta ($new_post_id, 'tweetimport_date_imported', date ('Y-m-d H:i:s'), true);
-		add_post_meta ($new_post_id, 'tweetimport_twitter_id', $tweet->id_str, true);
 
-		//if ($twitter_account['hash_tag'] == 1) {
-		//	preg_match_all ('~#([A-Za-z0-9_]+)(?=\s|\Z)~', $tweet->text, $out);
-		//}
-		//if ($twitter_account['add_tag']) {
-		//	$out[0][] = $twitter_account['add_tag'];
-		//}
-		//wp_set_post_tags($new_post_id, implode (',', $out[0]));
-
+		twmi_debug( 'Import: Imported post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
 		++$count;
 	}
 
@@ -146,7 +139,7 @@ function stop_duplicates($tweet)
                                               WHERE meta_key = 'tweetimport_twitter_id'
                                               AND meta_value = '%s'", $tweet->id_str));
 	if ( 0 < $posts ) {
-		error_log( 'Skipped duplicate: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ) );
+		twmi_debug( 'Import: Skipping duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;
