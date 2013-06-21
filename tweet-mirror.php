@@ -18,6 +18,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+define( 'TWEET_MIRROR_LOG', true );
 define( 'TWEET_MIRROR_DEBUG', true );
 
 // Include plugin libraries and class files
@@ -36,13 +37,27 @@ if (is_admin()) {
 	$plugin_settings = new TweetMirrorSettings( __FILE__, $plugin );
 }
 
-if (TWEET_MIRROR_DEBUG) {
-	define( 'TWEET_MIRROR_DEBUG_FILE', dirname( __FILE__ ) . '/debug.log' );
-	function twmi_debug( $message ) {
+// Logging
+
+if ( TWEET_MIRROR_LOG || TWEET_MIRROR_DEBUG ) {
+	define( 'TWEET_MIRROR_LOG_FILE', dirname( __FILE__ ) . '/tweet-mirror.log' );
+}
+
+if ( TWEET_MIRROR_LOG ) {
+	function twmi_log( $message, $level = 'INFO' ) {
 		$message = rtrim( $message );
-		$message = str_replace( "\n", "\n                    ", $message );
-		$message = current_time( 'mysql' ) . ' ' . $message . "\n";
-		error_log( $message, 3, TWEET_MIRROR_DEBUG_FILE );
+		$message = str_replace( "\n", "\n                    " . $level . ' ', $message );
+		$message = current_time( 'mysql' ) . ' ' . $level . ' ' . $message . "\n";
+		error_log( $message, 3, TWEET_MIRROR_LOG_FILE );
+	}
+} else {
+	function twmi_log( $level, $message ) {
+	}
+}
+
+if ( TWEET_MIRROR_DEBUG ) {
+	function twmi_debug( $message ) {
+		twmi_log( $message, 'DEBUG' );
 	}
 } else {
 	function twmi_debug( $message ) {

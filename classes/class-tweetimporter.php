@@ -28,7 +28,7 @@ returns an array
 */
 public function get_twitter_feed( $params ) {
 
-	twmi_debug( 'Fetch: About to fetch tweets via Twitter API' );
+	if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Fetch: About to fetch tweets via Twitter API' );
 
 	$twitter_api = new tmhOAuth(array(
 		'consumer_key'    => TWITTER_CONSUMER_KEY,
@@ -48,19 +48,19 @@ public function get_twitter_feed( $params ) {
 	if (isset( $params['max_id'] )) {
 		$twitter_params['max_id'] = $params['max_id'];
 	}
-	twmi_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
+	if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
 	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
 
 	if ( $twitter_api->response['code'] === 200 ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
-		twmi_debug( 'Fetch: Twitter API OK: count ' . count( $tweet_list ) );
+		twmi_log( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
 		return array(
 			'tweets' => $tweet_list,
 			'error' => null,
 			);
 	} else {
-		twmi_debug( "Fetch: Twitter API error: code [{$twitter_api->response['code']}] errno [{$twitter_api->response['errno']}] error [{$twitter_api->response['error']}]" );
+		twmi_log( "Error fetching tweets for @{$params['screen_name']}. Code [{$twitter_api->response['code']}] Error number [{$twitter_api->response['errno']}] Error [{$twitter_api->response['error']}]", 'WARNING' );
 		return array(
 			'tweets' => null,
 			'error' => 'Twitter API: '
@@ -82,7 +82,7 @@ returns an array
 */
 public function import_tweets($tweet_list, $params) {
 
-	twmi_debug( 'Import: About to import tweets. count ' . count( $tweet_list ));
+	if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Import: About to import tweets. count ' . count( $tweet_list ));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
@@ -114,7 +114,7 @@ public function import_tweets($tweet_list, $params) {
 						  'post_category' => array($params['category']),
 						  'post_status' => 'publish');
 		$new_post = apply_filters($this->namespace . '_new_post_before_create', $new_post); // Offer the chance to manipulate new post data. return false to skip
-		if (!$new_post) {
+		if ( ! $new_post ) {
 			continue;
 		}
 		$new_post_id = wp_insert_post($new_post);
@@ -123,10 +123,10 @@ public function import_tweets($tweet_list, $params) {
 		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $params['screen_name'], true); 
 		add_post_meta ($new_post_id, 'tweetimport_date_imported', date ('Y-m-d H:i:s'), true);
 
-		twmi_debug( 'Import: Imported post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
+		if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Import: Imported post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
 		++$count;
 	}
-
+	twmi_log( "Saved $count tweets to WordPress for @" . $params['screen_name'] );
 	return compact( 'count' );
 }
 
@@ -139,7 +139,7 @@ function stop_duplicates($tweet)
                                               WHERE meta_key = 'tweetimport_twitter_id'
                                               AND meta_value = '%s'", $tweet->id_str));
 	if ( 0 < $posts ) {
-		twmi_debug( 'Import: Skipping duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
+		twmi_log( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;

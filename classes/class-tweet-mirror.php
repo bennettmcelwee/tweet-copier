@@ -52,10 +52,10 @@ class TweetMirror {
 
 		$screen_name = get_option( self::SCREENNAME_OPTION );
 		if ( $screen_name == '' ) {
-			$log_message = __('Error: Tweet Mirror settings have not yet been saved');
-			add_settings_error( 'general', 'tweets_imported', log_message, 'error' );
-			$this->log( 'last_error', $log_message );
-			twmi_debug( 'Import failed: settings have not yet been saved' );
+			$message = __('Error: Tweet Mirror settings have not yet been saved');
+			add_settings_error( 'general', 'tweets_imported', $message, 'error' );
+			$this->checkpoint( 'last_error', $message );
+			twmi_log( 'Import failed: settings have not yet been saved' );
 			return;
 		}
 
@@ -72,7 +72,7 @@ class TweetMirror {
 		$twitter_result = $importer->get_twitter_feed( $twitter_params );
 		if ( isset( $twitter_result['error'] )) {
 			add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
-			$this->log( 'last_error', $twitter_result['error'] );
+			$this->checkpoint( 'last_error', $twitter_result['error'] );
 		} else {
 			$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
 				'screen_name' => $screen_name,
@@ -80,9 +80,9 @@ class TweetMirror {
 				'posttype' => get_option( self::POSTTYPE_OPTION ),
 				'category' => get_option( self::CATEGORY_OPTION ),
 			));
-			$log_message = 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name;
-			add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-			$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
+			$message = 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name;
+			add_settings_error( 'general', 'tweets_imported', $message, 'updated' );
+			$this->checkpoint( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $message );
 		}
 		
 		if ( get_option( self::HISTORY_OPTION )) {
@@ -97,15 +97,16 @@ class TweetMirror {
 				$twitter_result = $importer->get_twitter_feed( $twitter_params );
 				if ( isset( $twitter_result['error'] )) {
 					add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
-					$this->log( 'last_error', $twitter_result['error'] );
+					$this->checkpoint( 'last_error', $twitter_result['error'] );
 				} else {
 					if ( count( $twitter_result['tweets'] ) === 1 ) {
 						// We only got one tweet, so no history is left
 						update_option( self::HISTORY_OPTION, false );
 						update_option( self::HISTORY_COMPLETE_OPTION, true );
-						$log_message = 'No more tweet history to mirror from @' . $screen_name;
-						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-						$this->log( 'last_empty', $log_message );
+						twmi_log( 'No more tweet history to fetch for @' . $screen_name );
+						$message = 'No more tweet history to mirror from @' . $screen_name;
+						add_settings_error( 'general', 'tweets_imported', $message, 'updated' );
+						$this->checkpoint( 'last_empty', $message );
 					} else {
 						$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
 							'screen_name' => $screen_name,
@@ -113,9 +114,9 @@ class TweetMirror {
 							'posttype' => get_option( self::POSTTYPE_OPTION ),
 							'category' => get_option( self::CATEGORY_OPTION ),
 						));
-						$log_message = 'Imported ' . $import_result['count'] . ' historical tweets from @' . $screen_name;
-						add_settings_error( 'general', 'tweets_imported', $log_message, 'updated' );
-						$this->log( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $log_message );
+						$message = 'Imported ' . $import_result['count'] . ' historical tweets from @' . $screen_name;
+						add_settings_error( 'general', 'tweets_imported', $message, 'updated' );
+						$this->checkpoint( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $message );
 					}
 				}
 			}
@@ -139,14 +140,14 @@ class TweetMirror {
 			$post = $query->next_post();
 			$id = get_metadata( 'post', $post->ID, 'tweetimport_twitter_id', true );
 		}
-		twmi_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
+		if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
 		return $id;
 	}
 
 	/**
-		Log progress for display to the user
+		Update a checkpoint for a given category. These are displayed on the settings page.
 	*/
-	private function log( $category, $message ) {
+	private function checkpoint( $category, $message ) {
 		$category = 'tweet_mirror_' . $category;
 		$message = current_time( 'mysql' ) . ' ' . $message;
 		if ( ! add_option( $category, $message, '', 'no' )) {
