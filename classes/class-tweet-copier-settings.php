@@ -44,7 +44,7 @@ class TweetCopierSettings {
 	
 	public function add_menu_item() {
 		// add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function);
-		add_options_page( 'Tweet Copier Settings' , 'Tweet Copier Settings' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
+		add_options_page( 'Tweet Copier Settings' , 'Tweet Copier' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
 	}
 
 	public function add_settings_link( $links ) {
