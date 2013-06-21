@@ -1,6 +1,6 @@
 <?php
 
-class Tweet_Importer {
+class TweetCopierEngine {
 
 /** URL for fetching tweets; <SCREENNAME> is replaced with the, erm, screen name */
 const TWITTER_API_USER_TIMELINE_URL = 'https://api.twitter.com/1/statuses/user_timeline.json?screen_name=<SCREENNAME>&count=3';
@@ -12,8 +12,8 @@ public function __construct( $namespace ) {
 	$this->namespace = $namespace;
 
 	// Default actions and filters
-	if ( ! has_action ($this->namespace . '_tweet_before_new_post', 'Tweet_Importer::stop_duplicates')) {
-		add_action($this->namespace . '_tweet_before_new_post', 'Tweet_Importer::stop_duplicates');
+	if ( ! has_action ($this->namespace . '_tweet_before_new_post', 'TweetCopierEngine::stop_duplicates')) {
+		add_action($this->namespace . '_tweet_before_new_post', 'TweetCopierEngine::stop_duplicates');
 	}
 }
 
@@ -28,7 +28,7 @@ returns an array
 */
 public function get_twitter_feed( $params ) {
 
-	if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Fetch: About to fetch tweets via Twitter API' );
+	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetch: About to fetch tweets via Twitter API' );
 
 	$twitter_api = new tmhOAuth(array(
 		'consumer_key'    => TWITTER_CONSUMER_KEY,
@@ -48,19 +48,19 @@ public function get_twitter_feed( $params ) {
 	if (isset( $params['max_id'] )) {
 		$twitter_params['max_id'] = $params['max_id'];
 	}
-	if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
+	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
 	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
 
 	if ( $twitter_api->response['code'] === 200 ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
-		twmi_log( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
+		twcp_log( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
 		return array(
 			'tweets' => $tweet_list,
 			'error' => null,
 			);
 	} else {
-		twmi_log( "Error fetching tweets for @{$params['screen_name']}. Code [{$twitter_api->response['code']}] Error number [{$twitter_api->response['errno']}] Error [{$twitter_api->response['error']}]", 'WARNING' );
+		twcp_log( "Error fetching tweets for @{$params['screen_name']}. Code [{$twitter_api->response['code']}] Error number [{$twitter_api->response['errno']}] Error [{$twitter_api->response['error']}]", 'WARNING' );
 		return array(
 			'tweets' => null,
 			'error' => 'Twitter API: '
@@ -73,6 +73,7 @@ public function get_twitter_feed( $params ) {
 
 
 /**
+Save a list of tweets as WordPress posts.
 $params is an array:
 	author
 	posttype
@@ -80,9 +81,9 @@ $params is an array:
 returns an array
 	count
 */
-public function import_tweets($tweet_list, $params) {
+public function save_tweets($tweet_list, $params) {
 
-	if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Import: About to import tweets. count ' . count( $tweet_list ));
+	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Save: About to save tweets. count ' . count( $tweet_list ));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
@@ -119,14 +120,14 @@ public function import_tweets($tweet_list, $params) {
 		}
 		$new_post_id = wp_insert_post($new_post);
 
-		add_post_meta ($new_post_id, 'tweetimport_twitter_id', $tweet->id_str, true);
-		add_post_meta ($new_post_id, 'tweetimport_twitter_author', $params['screen_name'], true); 
-		add_post_meta ($new_post_id, 'tweetimport_date_imported', date ('Y-m-d H:i:s'), true);
+		add_post_meta ($new_post_id, 'tweetcopier_twitter_id', $tweet->id_str, true);
+		add_post_meta ($new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
+		add_post_meta ($new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Import: Imported post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
 		++$count;
 	}
-	twmi_log( "Saved $count tweets to WordPress for @" . $params['screen_name'] );
+	twcp_log( "Saved $count tweets to WordPress for @" . $params['screen_name'] );
 	return compact( 'count' );
 }
 
@@ -136,15 +137,15 @@ function stop_duplicates($tweet)
 
 	// FIXME: don't count trashed posts
 	$posts = $wpdb->get_var ($wpdb->prepare ("SELECT COUNT(*) FROM $wpdb->postmeta 
-                                              WHERE meta_key = 'tweetimport_twitter_id'
+                                              WHERE meta_key = 'tweetcopier_twitter_id'
                                               AND meta_value = '%s'", $tweet->id_str));
 	if ( 0 < $posts ) {
-		twmi_log( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
+		twcp_log( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;
 	}
 }
 
-} // class Tweet_Importer
+} // class TweetCopierEngine
 

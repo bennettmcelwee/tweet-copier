@@ -4,7 +4,7 @@
  * Parent TestCase class containing common methods and properties, plus an
  * override for the wp_mail() and wp_redirect() functions
  *
- * @package tweet-mirror
+ * @package tweet-copier
  * @author
  * @copyright
  * @license http://www.gnu.org/licenses/gpl-2.0.html GPLv2
@@ -92,7 +92,7 @@ require_once 'PHPUnit/Autoload.php';
 /**
  * Parent TestCase class containing common methods and properties
  *
- * @package tweet-mirror
+ * @package tweet-copier
  * @author
  * @copyright
  * @license http://www.gnu.org/licenses/gpl-2.0.html GPLv2
@@ -101,7 +101,7 @@ require_once 'PHPUnit/Autoload.php';
  * http://wordpress.org/extend/plugins/oop-plugin-template-solution/
  */
 abstract class TestCase extends PHPUnit_Framework_TestCase {
-	const ID = 'tweet-mirror';
+	const ID = 'tweet-copier';
 
 
 	/**

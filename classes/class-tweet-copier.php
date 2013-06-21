@@ -2,19 +2,19 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-class TweetMirror {
+class TweetCopier {
 
 	// Options
-	const SCREENNAME_OPTION = 'tweet_mirror_screenname';
-	const POSTTYPE_OPTION = 'tweet_mirror_posttype';
-	const AUTHOR_OPTION = 'tweet_mirror_author';
-	const CATEGORY_OPTION = 'tweet_mirror_category';
-	const HISTORY_OPTION = 'tweet_mirror_history';
-	const HISTORY_COMPLETE_OPTION = 'tweet_mirror_history_conplete';
+	const SCREENNAME_OPTION = 'tweet_copier_screenname';
+	const POSTTYPE_OPTION = 'tweet_copier_posttype';
+	const AUTHOR_OPTION = 'tweet_copier_author';
+	const CATEGORY_OPTION = 'tweet_copier_category';
+	const HISTORY_OPTION = 'tweet_copier_history';
+	const HISTORY_COMPLETE_OPTION = 'tweet_copier_history_conplete';
 
 	// Schedule hook
 	// Codex says "For some reason there seems to be a problem on some systems where the hook must not contain underscores or uppercase characters."
-	const SCHEDULE_HOOK = 'tweetmirrorschedule';
+	const SCHEDULE_HOOK = 'tweetcopierschedule';
 
 	private $dir;
 	private $file;
@@ -32,15 +32,15 @@ class TweetMirror {
 		add_action( 'init', array( &$this, 'load_localisation' ), 0 );
 
 		// Handle schedule
-		add_action( self::SCHEDULE_HOOK, array( &$this, 'import_tweets' ) );
+		add_action( self::SCHEDULE_HOOK, array( &$this, 'copy_tweets' ) );
 	}
 	
 	public function load_localisation () {
-		load_plugin_textdomain( 'tweet_mirror' , false , dirname( plugin_basename( $this->file ) ) . '/lang/' );
+		load_plugin_textdomain( 'tweet_copier' , false , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
 	
 	public function load_plugin_textdomain () {
-	    $domain = 'tweet_mirror_textdomain';
+	    $domain = 'tweet_copier_textdomain';
 	    
 	    $locale = apply_filters( 'plugin_locale' , get_locale() , $domain );
 	 
@@ -48,18 +48,18 @@ class TweetMirror {
 	    load_plugin_textdomain( $domain , FALSE , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
 	
-	public function import_tweets() {
+	public function copy_tweets() {
 
 		$screen_name = get_option( self::SCREENNAME_OPTION );
 		if ( $screen_name == '' ) {
-			$message = __('Error: Tweet Mirror settings have not yet been saved');
-			add_settings_error( 'general', 'tweets_imported', $message, 'error' );
+			$message = __('Error: Tweet Copier settings have not yet been saved');
+			add_settings_error( 'general', 'tweet_copier', $message, 'error' );
 			$this->checkpoint( 'last_error', $message );
-			twmi_log( 'Import failed: settings have not yet been saved' );
+			twcp_log( 'Copy failed: settings have not yet been saved' );
 			return;
 		}
 
-		$importer = new Tweet_Importer( 'tweet_mirror' );
+		$engine = new TweetCopierEngine( 'tweet_copier' );
 
 		$twitter_params = array(
 			'screen_name' => $screen_name,
@@ -69,54 +69,54 @@ class TweetMirror {
 			$twitter_params['since_id'] = $newest_tweet_id;
 		}
 		
-		$twitter_result = $importer->get_twitter_feed( $twitter_params );
+		$twitter_result = $engine->get_twitter_feed( $twitter_params );
 		if ( isset( $twitter_result['error'] )) {
-			add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
+			add_settings_error( 'general', 'tweet_copier', __('Error: ') . $twitter_result['error'], 'error' );
 			$this->checkpoint( 'last_error', $twitter_result['error'] );
 		} else {
-			$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
+			$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 				'screen_name' => $screen_name,
 				'author' => get_option( self::AUTHOR_OPTION ),
 				'posttype' => get_option( self::POSTTYPE_OPTION ),
 				'category' => get_option( self::CATEGORY_OPTION ),
 			));
-			$message = 'Imported ' . $import_result['count'] . ' tweets from @' . $screen_name;
-			add_settings_error( 'general', 'tweets_imported', $message, 'updated' );
-			$this->checkpoint( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $message );
+			$message = 'Saved ' . $save_result['count'] . ' tweets from @' . $screen_name;
+			add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
+			$this->checkpoint( $save_result['count'] === 0 ? 'last_empty' : 'last_copy', $message );
 		}
 		
 		if ( get_option( self::HISTORY_OPTION )) {
 			$oldest_tweet_id = $this->get_tweet_id_limit( $screen_name, 'oldest' );
 			if ( isset( $oldest_tweet_id )) {
-				// Some tweets are already imported, so we fetch any older tweets if we can
+				// Some tweets are already copied, so we fetch any older tweets if we can.
 				// Note we'll always get at least one tweet, which is the oldest one we already have.
 				$twitter_params = array(
 					'screen_name' => $screen_name,
 					'max_id' => $oldest_tweet_id,
 				);
-				$twitter_result = $importer->get_twitter_feed( $twitter_params );
+				$twitter_result = $engine->get_twitter_feed( $twitter_params );
 				if ( isset( $twitter_result['error'] )) {
-					add_settings_error( 'general', 'tweets_imported', __('Error: ') . $twitter_result['error'], 'error' );
+					add_settings_error( 'general', 'tweet_copier', __('Error: ') . $twitter_result['error'], 'error' );
 					$this->checkpoint( 'last_error', $twitter_result['error'] );
 				} else {
 					if ( count( $twitter_result['tweets'] ) === 1 ) {
 						// We only got one tweet, so no history is left
 						update_option( self::HISTORY_OPTION, false );
 						update_option( self::HISTORY_COMPLETE_OPTION, true );
-						twmi_log( 'No more tweet history to fetch for @' . $screen_name );
-						$message = 'No more tweet history to mirror from @' . $screen_name;
-						add_settings_error( 'general', 'tweets_imported', $message, 'updated' );
+						$message = 'No more old tweets to copy from @' . $screen_name;
+						twcp_log( $message );
+						add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
 						$this->checkpoint( 'last_empty', $message );
 					} else {
-						$import_result = $importer->import_tweets( $twitter_result['tweets'], array(
+						$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 							'screen_name' => $screen_name,
 							'author' => get_option( self::AUTHOR_OPTION ),
 							'posttype' => get_option( self::POSTTYPE_OPTION ),
 							'category' => get_option( self::CATEGORY_OPTION ),
 						));
-						$message = 'Imported ' . $import_result['count'] . ' historical tweets from @' . $screen_name;
-						add_settings_error( 'general', 'tweets_imported', $message, 'updated' );
-						$this->checkpoint( $import_result['count'] === 0 ? 'last_empty' : 'last_import', $message );
+						$message = 'Saved ' . $save_result['count'] . ' historical tweets from @' . $screen_name;
+						add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
+						$this->checkpoint( $save_result['count'] === 0 ? 'last_empty' : 'last_copy', $message );
 					}
 				}
 			}
@@ -128,7 +128,7 @@ class TweetMirror {
 		$query = new WP_Query( array(
 			// tweets by this user
 			'post_type' => get_option( self::POSTTYPE_OPTION ),
-			'meta_key' => 'tweetimport_twitter_author',
+			'meta_key' => 'tweetcopier_twitter_author',
 			'meta_value' => $screen_name,
 			// Get the tweet at the limit
 			'orderby' => 'date',
@@ -138,9 +138,9 @@ class TweetMirror {
 		$id = null;
 		if ( $query->have_posts()) {
 			$post = $query->next_post();
-			$id = get_metadata( 'post', $post->ID, 'tweetimport_twitter_id', true );
+			$id = get_metadata( 'post', $post->ID, 'tweetcopier_twitter_id', true );
 		}
-		if ( TWEET_MIRROR_DEBUG ) twmi_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
 		return $id;
 	}
 
@@ -148,7 +148,7 @@ class TweetMirror {
 		Update a checkpoint for a given category. These are displayed on the settings page.
 	*/
 	private function checkpoint( $category, $message ) {
-		$category = 'tweet_mirror_' . $category;
+		$category = 'tweet_copier_' . $category;
 		$message = current_time( 'mysql' ) . ' ' . $message;
 		if ( ! add_option( $category, $message, '', 'no' )) {
 			// option already exists. Update it
