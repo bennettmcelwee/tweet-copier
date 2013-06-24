@@ -289,9 +289,9 @@ class TweetCopierSettings {
 		echo '</form>';
 		echo '<h3 class="title">Recent Results</h2>
 			<table>
-				<tr><th style="text-align: left;">Last empty</th><td>'  . get_option( 'tweet_copier_last_empty' ) . '</td</tr>
-				<tr><th style="text-align: left;">Last save</th><td>' . get_option( 'tweet_copier_last_copy' ) . '</td</tr>
-				<tr><th style="text-align: left;">Last error</th><td>'  . get_option( 'tweet_copier_last_error' ) . '</td</tr>
+				<tr><th style="text-align: left;">Last empty</th><td>'  . $this->plugin->get_checkpoint( 'empty' ) . '</td</tr>
+				<tr><th style="text-align: left;">Last copy</th><td>'   . $this->plugin->get_checkpoint( 'copy' ) . '</td</tr>
+				<tr><th style="text-align: left;">Last error</th><td>'  . $this->plugin->get_checkpoint( 'error' ) . '</td</tr>
 			</table>';
 
 		echo '</div>';

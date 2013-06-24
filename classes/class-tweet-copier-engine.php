@@ -54,13 +54,12 @@ public function get_twitter_feed( $params ) {
 	if ( $twitter_api->response['code'] === 200 ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
-		twcp_log( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
 		return array(
 			'tweets' => $tweet_list,
 			'error' => null,
 			);
 	} else {
-		twcp_log( "Error fetching tweets for @{$params['screen_name']}. Code [{$twitter_api->response['code']}] Error number [{$twitter_api->response['errno']}] Error [{$twitter_api->response['error']}]", 'WARNING' );
 		return array(
 			'tweets' => null,
 			'error' => 'Twitter API: '
@@ -127,7 +126,6 @@ public function save_tweets($tweet_list, $params) {
 		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
 		++$count;
 	}
-	twcp_log( "Saved $count tweets to WordPress for @" . $params['screen_name'] );
 	return compact( 'count' );
 }
 
@@ -140,7 +138,7 @@ function stop_duplicates($tweet)
                                               WHERE meta_key = 'tweetcopier_twitter_id'
                                               AND meta_value = '%s'", $tweet->id_str));
 	if ( 0 < $posts ) {
-		twcp_log( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;

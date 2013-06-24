@@ -52,9 +52,7 @@ class TweetCopier {
 
 		$screen_name = get_option( self::SCREENNAME_OPTION );
 		if ( $screen_name == '' ) {
-			$message = __('Error: Tweet Copier settings have not yet been saved');
-			add_settings_error( 'general', 'tweet_copier', $message, 'error' );
-			$this->checkpoint( 'last_error', $message );
+			$this->checkpoint( 'error', __('Tweet Copier settings have not yet been saved') );
 			twcp_log( 'Copy failed: settings have not yet been saved' );
 			return;
 		}
@@ -71,18 +69,18 @@ class TweetCopier {
 		
 		$twitter_result = $engine->get_twitter_feed( $twitter_params );
 		if ( isset( $twitter_result['error'] )) {
-			add_settings_error( 'general', 'tweet_copier', __('Error: ') . $twitter_result['error'], 'error' );
-			$this->checkpoint( 'last_error', $twitter_result['error'] );
-		} else {
+			$this->checkpoint( 'error', 'Fetching new tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
+			twcp_log( 'Copy failed: error fetching new tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
+		} else if ( 0 < count( $twitter_result['tweets'] ) ) {
 			$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 				'screen_name' => $screen_name,
 				'author' => get_option( self::AUTHOR_OPTION ),
 				'posttype' => get_option( self::POSTTYPE_OPTION ),
 				'category' => get_option( self::CATEGORY_OPTION ),
 			));
-			$message = 'Saved ' . $save_result['count'] . ' tweets from @' . $screen_name;
-			add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
-			$this->checkpoint( $save_result['count'] === 0 ? 'last_empty' : 'last_copy', $message );
+			$message = 'Copied ' . $save_result['count'] . ' new tweets from @' . $screen_name;
+			$this->checkpoint( $save_result['count'] === 0 ? 'empty' : 'copy', $message );
+			twcp_log( $message );
 		}
 		
 		if ( get_option( self::HISTORY_OPTION )) {
@@ -96,17 +94,16 @@ class TweetCopier {
 				);
 				$twitter_result = $engine->get_twitter_feed( $twitter_params );
 				if ( isset( $twitter_result['error'] )) {
-					add_settings_error( 'general', 'tweet_copier', __('Error: ') . $twitter_result['error'], 'error' );
-					$this->checkpoint( 'last_error', $twitter_result['error'] );
-				} else {
+					$this->checkpoint( 'error', 'Fetching old tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
+					twcp_log( 'Copy failed: error fetching old tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
+				} else if ( 0 < count( $twitter_result['tweets'] ) ) {
 					if ( count( $twitter_result['tweets'] ) === 1 ) {
 						// We only got one tweet, so no history is left
 						update_option( self::HISTORY_OPTION, false );
 						update_option( self::HISTORY_COMPLETE_OPTION, true );
 						$message = 'No more old tweets to copy from @' . $screen_name;
+						$this->checkpoint( 'empty', $message );
 						twcp_log( $message );
-						add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
-						$this->checkpoint( 'last_empty', $message );
 					} else {
 						$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 							'screen_name' => $screen_name,
@@ -114,9 +111,9 @@ class TweetCopier {
 							'posttype' => get_option( self::POSTTYPE_OPTION ),
 							'category' => get_option( self::CATEGORY_OPTION ),
 						));
-						$message = 'Saved ' . $save_result['count'] . ' historical tweets from @' . $screen_name;
-						add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
-						$this->checkpoint( $save_result['count'] === 0 ? 'last_empty' : 'last_copy', $message );
+						$message = 'Copied ' . $save_result['count'] . ' old tweets from @' . $screen_name;
+						$this->checkpoint( $save_result['count'] === 0 ? 'empty' : 'copy', $message );
+						twcp_log( $message );
 					}
 				}
 			}
@@ -148,12 +145,26 @@ class TweetCopier {
 		Update a checkpoint for a given category. These are displayed on the settings page.
 	*/
 	private function checkpoint( $category, $message ) {
-		$category = 'tweet_copier_' . $category;
+		$option = 'tweet_copier_' . $category;
 		$message = current_time( 'mysql' ) . ' ' . $message;
-		if ( ! add_option( $category, $message, '', 'no' )) {
+		if ( ! add_option( $option, $message, '', 'no' )) {
 			// option already exists. Update it
-			update_option( $category, $message );
+			update_option( $option, $message );
 		}
+		// Show an immediate message if we're in the WP Admin UI
+		if ( defined( 'add_settings_error' ) ) {
+			if ( $category == 'error' ) {
+				add_settings_error( 'general', 'tweet_copier', __('Error: ') . $message, 'error' );
+			} else {
+				add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
+			}
+		}
+
+	}
+
+	public function get_checkpoint( $category ) {
+		$option = 'tweet_copier_' . $category;
+		return get_option( $option );
 	}
 
 }
