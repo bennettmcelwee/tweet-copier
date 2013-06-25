@@ -89,10 +89,7 @@ public function save_tweets($tweet_list, $params) {
 		if (!$tweet) {
 			continue;
 		}
-
-		$plain_text = iconv( "UTF-8", "ISO-8859-1//IGNORE", $tweet->text );
-
-		$processed_text = $plain_text;
+		$processed_text = $tweet->text;
 
 		// Hyperlink screen names
 		$processed_text = preg_replace("~@(\w+)~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
@@ -105,7 +102,7 @@ public function save_tweets($tweet_list, $params) {
 		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);
 		$processed_text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $processed_text);
 
-		$new_post = array('post_title' => trim( substr( $plain_text, 0, 25 ) . '...' ),
+		$new_post = array('post_title' => trim( substr( $tweet->text, 0, 25 ) . '...' ),
 						  'post_content' => trim( $processed_text ),
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
