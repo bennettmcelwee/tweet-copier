@@ -28,8 +28,6 @@ require_once 'lib/tmhUtilities.php';
 require_once 'classes/class-tweet-copier.php';
 require_once 'classes/class-tweet-copier-engine.php';
 
-require_once 'constants.php';
-
 // Instantiate necessary classes
 call_user_func( function() {
 	// Don't touch global namespace

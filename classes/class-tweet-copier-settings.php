@@ -5,6 +5,7 @@ class TweetCopierSettings {
 
 	const SETTINGS_PAGE = 'tweet_copier_settings';
 	const SETTINGS_OPTION_GROUP = 'tweet_copier_options1';
+	const AUTH_SECTION = 'tweet_copier_auth_settings';
 	const FETCH_SECTION = 'tweet_copier_fetch_settings';
 	const IMPORT_SECTION = 'tweet_copier_import_settings';
 	const SCHEDULE_SECTION = 'tweet_copier_schedule_settings';
@@ -56,11 +57,25 @@ class TweetCopierSettings {
 	public function register_settings() {
 		
 		// add_settings_section( $id, $title, $callback, $page );
+		add_settings_section( self::AUTH_SECTION , __( 'Authentication' , 'tweet_copier_textdomain' ) , array( &$this , 'auth_settings' ) , self::SETTINGS_PAGE );
 		add_settings_section( self::FETCH_SECTION , __( 'Fetching tweets from Twitter' , 'tweet_copier_textdomain' ) , array( &$this , 'fetch_settings' ) , self::SETTINGS_PAGE );
 		add_settings_section( self::IMPORT_SECTION , __( 'Saving tweets into WordPress' , 'tweet_copier_textdomain' ) , array( &$this , 'import_settings' ) , self::SETTINGS_PAGE );
 		add_settings_section( self::SCHEDULE_SECTION , __( 'Scheduling' , 'tweet_copier_textdomain' ) , array( &$this , 'schedule_settings' ) , self::SETTINGS_PAGE );
 		
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
+		add_settings_field( TweetCopier::TWITTER_CONSUMER_KEY_OPTION, __( 'Consumer key:' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'description' => 'Twitter application consumer key', 'label_for' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'class' => 'regular-text code' ) );
+		add_settings_field( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, __( 'Consumer secret:' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'description' => 'Twitter application consumer secret', 'label_for' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'class' => 'regular-text code' ) );
+		add_settings_field( TweetCopier::TWITTER_USER_TOKEN_OPTION, __( 'User token:' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'description' => 'Twitter user token', 'label_for' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'class' => 'regular-text code' ) );
+		add_settings_field( TweetCopier::TWITTER_USER_SECRET_OPTION, __( 'User secret:' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'class' => 'regular-text code' ) );
+
 		add_settings_field( TweetCopier::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
 			array( 'fieldname' => TweetCopier::SCREENNAME_OPTION, 'description' => 'Screen name of Twitter account to copy', 'label_for' => TweetCopier::SCREENNAME_OPTION ) );
@@ -93,6 +108,10 @@ class TweetCopierSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::CATEGORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::COPYNOW_OPTION );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_KEY_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_SECRET_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_TOKEN_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SECRET_OPTION , 'trim' );
 	}
 
 	public function fetch_settings() { echo '<p>' . __( 'How to fetch tweets from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
@@ -101,16 +120,19 @@ class TweetCopierSettings {
 
 	public function schedule_settings() { echo '<p>' . __( 'How often to copy tweets.' , 'tweet_copier_textdomain' ) . '</p>'; }
 
+	public function auth_settings() { echo '<p>' . __( 'Authentication details for fetching information from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
+
 	public function render_field_string( $args ) {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
+		$class = $args['class'];
 		$option = get_option( $fieldname );
 		$value = '';
 		if ( $option && strlen( $option ) > 0 && $option != '' ) {
 			$value = $option;
 		}
-		echo '<input id="' . $fieldname . '" type="text" name="' . $fieldname . '" value="' . $value . '"/>
+		echo '<input id="' . $fieldname . '" type="text" name="' . $fieldname . '" value="' . $value . '" class="description ' . $class . '"/>
 				<span class="description">' . __( $description , 'tweet_copier_textdomain' ) . '</span>';
 	}
 
@@ -221,7 +243,7 @@ class TweetCopierSettings {
 		if ( $option && strlen( $option ) > 0 && $option != '' ) {
 			$value = $option;
 		}
-		$schedules = array( self::SCHEDULE_VALUE_MANUAL => array( 'display' => 'Manual only' ))
+		$schedules = array( self::SCHEDULE_VALUE_MANUAL => array( 'display' => 'Manual Only' ))
 		           + wp_get_schedules();
 
 		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';

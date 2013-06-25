@@ -31,10 +31,10 @@ public function get_twitter_feed( $params ) {
 	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetch: About to fetch tweets via Twitter API' );
 
 	$twitter_api = new tmhOAuth(array(
-		'consumer_key'    => TWITTER_CONSUMER_KEY,
-		'consumer_secret' => TWITTER_CONSUMER_SECRET,
-		'user_token'      => TWITTER_USER_TOKEN,
-		'user_secret'     => TWITTER_USER_SECRET,
+		'consumer_key'    => get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ),
+		'consumer_secret' => get_option( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ),
+		'user_token'      => get_option( TweetCopier::TWITTER_USER_TOKEN_OPTION ),
+		'user_secret'     => get_option( TweetCopier::TWITTER_USER_SECRET_OPTION ),
 	));
 
 	$twitter_params = array(

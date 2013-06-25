@@ -5,6 +5,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class TweetCopier {
 
 	// Options
+	const TWITTER_CONSUMER_KEY_OPTION    = 'tweet_copier_consumer_key';
+	const TWITTER_CONSUMER_SECRET_OPTION = 'tweet_copier_consumer_secret';
+	// TODO Get the user stuff via oAuth
+	const TWITTER_USER_TOKEN_OPTION      = 'tweet_copier_user_token';
+	const TWITTER_USER_SECRET_OPTION     = 'tweet_copier_user_secret';
+
 	const SCREENNAME_OPTION = 'tweet_copier_screenname';
 	const POSTTYPE_OPTION = 'tweet_copier_posttype';
 	const AUTHOR_OPTION = 'tweet_copier_author';
@@ -81,6 +87,10 @@ class TweetCopier {
 			$message = 'Copied ' . $save_result['count'] . ' new tweets from @' . $screen_name;
 			$this->checkpoint( $save_result['count'] === 0 ? 'empty' : 'copy', $message );
 			twcp_log( $message );
+		} else {
+			$message = 'No new tweets from @' . $screen_name;
+			$this->checkpoint( 'empty', $message );
+			twcp_log( $message );
 		}
 		
 		if ( get_option( self::HISTORY_OPTION )) {
@@ -146,13 +156,13 @@ class TweetCopier {
 	*/
 	private function checkpoint( $category, $message ) {
 		$option = 'tweet_copier_' . $category;
-		$message = current_time( 'mysql' ) . ' ' . $message;
-		if ( ! add_option( $option, $message, '', 'no' )) {
+		$timestamped_message = current_time( 'mysql' ) . ' ' . $message;
+		if ( ! add_option( $option, $timestamped_message, '', 'no' )) {
 			// option already exists. Update it
-			update_option( $option, $message );
+			update_option( $option, $timestamped_message );
 		}
 		// Show an immediate message if we're in the WP Admin UI
-		if ( defined( 'add_settings_error' ) ) {
+		if ( function_exists( 'add_settings_error' ) ) {
 			if ( $category == 'error' ) {
 				add_settings_error( 'general', 'tweet_copier', __('Error: ') . $message, 'error' );
 			} else {
