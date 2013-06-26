@@ -39,13 +39,13 @@ class TweetCopierSettings {
 
 		// Add settings link to plugins page
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
-		
+
 		// Set up filters to run actions as settings are saved
 		add_filter( 'pre_update_option_' . self::SCHEDULE_OPTION , array( &$this , 'filter_schedule' ), 10, 2 );
 		add_filter( 'pre_update_option_' . self::COPYNOW_OPTION , array( &$this , 'filter_copy_now' ), 10, 2 );
-		
+
 	}
-	
+
 	public function add_settings_page() {
 		// add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function);
 		$hook_suffix = add_options_page( 'Tweet Copier Settings' , 'Tweet Copier' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
@@ -56,10 +56,10 @@ class TweetCopierSettings {
 	public function settings_page_head() {
 
 		echo '<style>
-				.twcp-edit-button { margin: 0 0.5em; text-decoration: underline; }
-			</style>';
+			.twcp-edit-button { margin: 0 0.5em; text-decoration: underline; }
+		</style>';
 		echo '<script>
-				addLoadEvent(function() {
+			addLoadEvent(function() {
 					jQuery("a.twcp-edit-button").click(function(event) {
 						event.preventDefault();
 						jQuery("#" + jQuery(this).attr("for")).prop("readonly", false);
@@ -147,8 +147,8 @@ class TweetCopierSettings {
 
 		$fieldname = $args['fieldname'];
 		$description = __( $args['description'] , 'tweet_copier_textdomain' );
-		$class = $args['class'];
-		$is_readonly = isset( $args['readonly'] );
+		$class = array_key_exists( 'class', $args ) ? $args['class'] : '';
+		$is_readonly = array_key_exists( 'readonly', $args ) ? $args['readonly'] : false;
 		$readonly_state = $is_readonly ? 'readonly="readonly"' : '';
 		$option = get_option( $fieldname );
 		$value = '';
