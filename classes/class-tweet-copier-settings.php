@@ -265,7 +265,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$value = '';
+		$value = 'daily'; // default value
 		if ( $option && strlen( $option ) > 0 && $option != '' ) {
 			$value = $option;
 		}
