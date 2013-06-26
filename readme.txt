@@ -1,49 +1,24 @@
-=== WordPress Plugin Template ===
-Contributors: hlashbrooke
-Donate link: http://www.hughlashbrooke.com/donate
-Tags: wordpress, plugin, template
+=== Tweet Copier ===
+Contributors: bennettmcelwee
+Donate link: http://thunderguy.com/semicolon/donate/
+Tags: twitter, tweet, import, copy
 Requires at least: 3.0
-Tested up to: 3.5.1
+Tested up to: 3.5.2
 Stable tag: 1.0
 
-A comprehensive code template for any WordPress plugin.
+Copy tweets from your Twitter account to your blog, and keep your blog updated as you create new tweets.
 
 == Description ==
 
-"WordPress Plugin Template" is an object-oriented code template for any kind of WordPress plugin that includes built-in support for:
-
-1. Custom post types with custom fields and custom taxonomies
-1. Plugin settings page
-1. WPML localisation
-
-Activating this plugin template in your WordPress dashboard will activate a new custom post type (identified as '*Posts' in the menu) as well as a new settings page (found at Settings > Plugin Settings). These pages are for demonstration purposes - all you need to do is edit the files in the plugin where necessary and these pages will reflect your new functionality.
+Tweet Copier keeps your WordPress blog synchronised with your Twitter account. It copies all old tweets into your blog, and continuously updates it with your new tweets. You can configure the schedule and various other aspects of the plugin.
 
 == Usage ==
 
-This plugin is intended to be a code framework for creating your own plugin. Just edit the files where necessary to have it working in the way that you need it to be.
+Fill in your Twitter authemtication details, decide which Twitter feed you want to copy, and Tweet Copier will do the rest.
 
 == Installation ==
 
-Installing "WordPress Plugin Template" can be done either by searching for "WordPress Plugin Template" via the "Plugins > Add New" screen in your WordPress dashboard, or by using the following steps:
-
-1. Download the plugin via WordPress.org
-1. Upload the ZIP file through the 'Plugins > Add New > Upload' screen in your WordPress dashboard
-1. Activate the plugin through the 'Plugins' menu in WordPress
-
-== Frequently Asked Questions ==
-
-= I've installed the plugin - now what? =
-
-While this plugin adds a post type, taxonomy and settings page to your WordPress dashboard, it is just a framework and is not intended for real world use in its current form. You need to edit the included files to buid your own plugin and create your own functionality.
+Install the plugin in the usual way. Go to Settings, fill in your Twitter authentication details, decide which Twitter feed you want to copy, and Tweet Copier will do the rest.
 
 == Changelog ==
 
-= 1.0 =
-* 2012-12-13
-* Initial release
-
-== Upgrade Notice ==
-
-= 1.0 =
-* 2012-12-13
-* Initial release

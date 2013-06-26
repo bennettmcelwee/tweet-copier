@@ -1,4 +1,6 @@
-WordPress Plugin Template
-=========================
+Tweet Copier
+============
 
-A basic code template for creating a standards-compliant WordPress plugin
+A WordPress plugin that copies tweets from your Twitter account to your blog, and updates continually as you create new tweets.
+
+See readme.txt for more details.
