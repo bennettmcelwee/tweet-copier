@@ -32,7 +32,7 @@ class TweetCopierSettings {
 		add_action( 'admin_init' , array( &$this , 'register_settings' ) );
 
 		// Add settings page to menu
-		add_action( 'admin_menu' , array( &$this , 'add_menu_item' ) );
+		add_action( 'admin_menu' , array( &$this , 'add_settings_page' ) );
 
 		// Add settings link to plugins page
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
@@ -43,9 +43,27 @@ class TweetCopierSettings {
 		
 	}
 	
-	public function add_menu_item() {
+	public function add_settings_page() {
 		// add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function);
-		add_options_page( 'Tweet Copier Settings' , 'Tweet Copier' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
+		$hook_suffix = add_options_page( 'Tweet Copier Settings' , 'Tweet Copier' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
+		add_action( "admin_print_scripts-$hook_suffix", array( &$this , 'settings_page_head' ) );
+
+	}
+
+	public function settings_page_head() {
+
+		echo '<style>
+				.twcp-edit-button { margin: 0 0.5em; text-decoration: underline; }
+			</style>';
+		echo '<script>
+				addLoadEvent(function() {
+					jQuery("a.twcp-edit-button").click(function(event) {
+						event.preventDefault();
+						jQuery("#" + jQuery(this).attr("for")).prop("readonly", false);
+						jQuery(this).hide();
+					});
+				});
+			</script>';
 	}
 
 	public function add_settings_link( $links ) {
@@ -65,16 +83,16 @@ class TweetCopierSettings {
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
 		add_settings_field( TweetCopier::TWITTER_CONSUMER_KEY_OPTION, __( 'Consumer key:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'description' => 'Twitter application consumer key', 'label_for' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'class' => 'regular-text code' ) );
+			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'description' => 'Twitter application consumer key', 'label_for' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'class' => 'regular-text code', 'readonly' => true ) );
 		add_settings_field( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, __( 'Consumer secret:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'description' => 'Twitter application consumer secret', 'label_for' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'class' => 'regular-text code' ) );
+			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'description' => 'Twitter application consumer secret', 'label_for' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'class' => 'regular-text code', 'readonly' => true ) );
 		add_settings_field( TweetCopier::TWITTER_USER_TOKEN_OPTION, __( 'User token:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'description' => 'Twitter user token', 'label_for' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'class' => 'regular-text code' ) );
+			array( 'fieldname' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'description' => 'Twitter user token', 'label_for' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'class' => 'regular-text code', 'readonly' => true ) );
 		add_settings_field( TweetCopier::TWITTER_USER_SECRET_OPTION, __( 'User secret:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'class' => 'regular-text code' ) );
+			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'class' => 'regular-text code', 'readonly' => true ) );
 
 		add_settings_field( TweetCopier::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_string' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
@@ -125,15 +143,20 @@ class TweetCopierSettings {
 	public function render_field_string( $args ) {
 
 		$fieldname = $args['fieldname'];
-		$description = $args['description'];
+		$description = __( $args['description'] , 'tweet_copier_textdomain' );
 		$class = $args['class'];
+		$is_readonly = isset( $args['readonly'] );
+		$readonly_state = $is_readonly ? 'readonly="readonly"' : '';
 		$option = get_option( $fieldname );
 		$value = '';
 		if ( $option && strlen( $option ) > 0 && $option != '' ) {
 			$value = $option;
 		}
-		echo '<input id="' . $fieldname . '" type="text" name="' . $fieldname . '" value="' . $value . '" class="description ' . $class . '"/>
-				<span class="description">' . __( $description , 'tweet_copier_textdomain' ) . '</span>';
+		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description $class' $readonly_state/>";
+		if ( $is_readonly ) {
+			echo "<a class='twcp-edit-button' for='$fieldname' href='#' >edit</a>";
+		}
+		echo "<span class='description'>$description</span>";
 	}
 
 	public function render_field_history( $args ) {
