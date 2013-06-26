@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @package Tweet Copier
+ */
 class TweetCopierEngine {
 
 /** URL for fetching tweets; <SCREENNAME> is replaced with the, erm, screen name */

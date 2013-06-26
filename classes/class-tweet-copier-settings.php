@@ -1,6 +1,9 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * @package Tweet Copier
+ */
 class TweetCopierSettings {
 
 	const SETTINGS_PAGE = 'tweet_copier_settings';

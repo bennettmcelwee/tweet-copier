@@ -8,29 +8,50 @@
  * Author URI: http://thunderguy.com/
  * Requires at least: 3.0
  * Tested up to: 3.5.1
+ * Licence: GPLv2
  * 
- * @package WordPress
+ * @package Tweet Copier
  * @author Bennett McElwee
  * @since 1.0.0
  *
- * Based on WordPress Plugin Template 1.0 by Hugh Lashbrooke
+ * Copyright (C) 2013 Bennett McElwee. This software may contain code licensed
+ * from WordPress Plugin Template by Hugh Lashbrooke, Tweet Import by Khaled
+ * Afiouni, Twitter Importer by DsgnWrks, and others. It takes a village.
  */
+
+/*
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+The GNU General Public License is available from
+http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+or by writing to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/** If true, write activity summaries to a log file. */
+define( 'TWEET_COPIER_LOG', true );
+
+/** If true, write activity details to a log file. */
 define( 'TWEET_COPIER_DEBUG', true );
-define( 'TWEET_COPIER_LOG', true || TWEET_COPIER_DEBUG );
 
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
 require_once 'lib/tmhUtilities.php';
-
 require_once 'classes/class-tweet-copier.php';
 require_once 'classes/class-tweet-copier-engine.php';
 
-// Instantiate necessary classes
+// Instantiate necessary classes (use call_user_func to avoid global namespace)
 call_user_func( function() {
-	// Don't touch global namespace
 	$plugin = new TweetCopier( __FILE__ );
 	if (is_admin()) {
 		require_once 'classes/class-tweet-copier-settings.php';
@@ -39,12 +60,8 @@ call_user_func( function() {
 });
 
 // Logging
-
 if ( TWEET_COPIER_LOG || TWEET_COPIER_DEBUG ) {
 	define( 'TWEET_COPIER_LOG_FILE', dirname( __FILE__ ) . '/tweet-copier.log' );
-}
-
-if ( TWEET_COPIER_LOG ) {
 	function twcp_log( $message, $level = 'INFO' ) {
 		$message = rtrim( $message );
 		$message = str_replace( "\n", "\n                    " . $level . ' ', $message );
@@ -56,9 +73,7 @@ if ( TWEET_COPIER_LOG ) {
 	}
 }
 
-/**
-	Usage: if ( TWEET_COPIER_DEBUG ) twcp_debug( 'My message' );
-*/
+/** Usage: if ( TWEET_COPIER_DEBUG ) twcp_debug( 'My message' ); */
 if ( TWEET_COPIER_DEBUG ) {
 	function twcp_debug( $message ) {
 		twcp_log( $message, 'DEBUG' );

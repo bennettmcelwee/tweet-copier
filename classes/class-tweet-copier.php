@@ -2,6 +2,9 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * @package Tweet Copier
+ */
 class TweetCopier {
 
 	// Options
