@@ -13,22 +13,21 @@
  * @package Tweet Copier
  * @author Bennett McElwee
  * @since 1.0.0
- *
- * Copyright (C) 2013 Bennett McElwee. This software may contain code licensed
- * from WordPress Plugin Template by Hugh Lashbrooke, Tweet Import by Khaled
- * Afiouni, Twitter Importer by DsgnWrks, and others. It takes a village.
  */
-
 /*
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+Copyright (C) 2013 Bennett McElwee. This software may contain code licensed
+from WordPress Plugin Template by Hugh Lashbrooke, Tweet Import by Khaled
+Afiouni, Twitter Importer by DsgnWrks, tmhOAuth by Matt Harris, and others.
+It takes a village.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 The GNU General Public License is available from
 http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
