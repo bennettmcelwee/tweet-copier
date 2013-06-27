@@ -62,7 +62,7 @@ class TweetCopierSettings {
 			addLoadEvent(function() {
 					jQuery("a.twcp-edit-button").click(function(event) {
 						event.preventDefault();
-						jQuery("#" + jQuery(this).attr("for")).prop("readonly", false);
+						jQuery("#" + jQuery(this).attr("for")).prop("readonly", false).focus();
 						jQuery(this).hide();
 					});
 				});
