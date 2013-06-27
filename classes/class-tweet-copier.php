@@ -1,9 +1,13 @@
 <?php
+/*
+ * Copyright (c) 2013 Bennett McElwee. Licensed under the GPL (v2 or later).
+ */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * @package Tweet Copier
+ * @author Bennett McElwee
  */
 class TweetCopier {
 

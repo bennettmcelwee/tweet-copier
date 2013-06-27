@@ -8,7 +8,7 @@
  * Author URI: http://thunderguy.com/
  * Requires at least: 3.0
  * Tested up to: 3.5.1
- * Licence: GPLv2
+ * Licence: GPLv2 or later
  * 
  * @package Tweet Copier
  * @author Bennett McElwee
@@ -30,7 +30,7 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 The GNU General Public License is available from
-http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+http://www.gnu.org/licenses/gpl-2.0.html
 or by writing to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
