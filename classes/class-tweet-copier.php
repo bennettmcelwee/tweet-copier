@@ -39,6 +39,9 @@ class TweetCopier {
 		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
 		$this->assets_url = esc_url( trailingslashit( plugins_url( '/assets/', $file ) ) );
 
+		// Lifecycle
+		register_deactivation_hook( $this->file, array( &$this, 'deactivate' ) );
+
 		// Handle localisation
 		$this->load_plugin_textdomain();
 		add_action( 'init', array( &$this, 'load_localisation' ), 0 );
@@ -64,6 +67,10 @@ class TweetCopier {
 	    load_plugin_textdomain( $domain , FALSE , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
 	
+	public function deactivate() {
+		wp_clear_scheduled_hook( self::SCHEDULE_HOOK );
+	}
+
 	public function copy_tweets() {
 
 		$screen_name = get_option( self::SCREENNAME_OPTION );
