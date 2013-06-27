@@ -30,6 +30,9 @@ class TweetCopier {
 	private $assets_dir;
 	private $assets_url;
 
+	/** Debug? */
+	private $is_debug = false;
+
 	public function __construct( $file ) {
 		$this->dir = dirname( $file );
 		$this->file = $file;
@@ -44,6 +47,10 @@ class TweetCopier {
 		add_action( self::SCHEDULE_HOOK, array( &$this, 'copy_tweets' ) );
 	}
 	
+	public function set_debug( $is_debug ) {
+		$this->is_debug = $is_debug;
+	}
+
 	public function load_localisation () {
 		load_plugin_textdomain( 'tweet_copier' , false , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
@@ -67,6 +74,7 @@ class TweetCopier {
 		}
 
 		$engine = new TweetCopierEngine( 'tweet_copier' );
+		$engine->set_debug( $this->is_debug );
 
 		$twitter_params = array(
 			'screen_name' => $screen_name,
@@ -150,7 +158,7 @@ class TweetCopier {
 			$post = $query->next_post();
 			$id = get_metadata( 'post', $post->ID, 'tweetcopier_twitter_id', true );
 		}
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
+		if ( $this->is_debug ) twcp_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
 		return $id;
 	}
 

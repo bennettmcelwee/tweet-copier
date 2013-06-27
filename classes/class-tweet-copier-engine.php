@@ -5,19 +5,25 @@
  */
 class TweetCopierEngine {
 
-/** URL for fetching tweets; <SCREENNAME> is replaced with the, erm, screen name */
-const TWITTER_API_USER_TIMELINE_URL = 'https://api.twitter.com/1/statuses/user_timeline.json?screen_name=<SCREENNAME>&count=3';
+/** How many tweets to fetch at once */
+const FETCH_COUNT = 50;
+const FETCH_COUNT_DEBUG = 5;
 
 /** Namespace prefix, used for hooks */
 private $namespace;
+
+/** Debug? */
+private $is_debug = false;
 
 public function __construct( $namespace ) {
 	$this->namespace = $namespace;
 
 	// Default actions and filters
-	if ( ! has_action ($this->namespace . '_tweet_before_new_post', 'TweetCopierEngine::stop_duplicates')) {
-		add_action($this->namespace . '_tweet_before_new_post', 'TweetCopierEngine::stop_duplicates');
-	}
+	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'stop_duplicates' ) );
+}
+
+public function set_debug( $is_debug ) {
+	$this->is_debug = $is_debug;
 }
 
 /**
@@ -31,7 +37,7 @@ returns an array
 */
 public function get_twitter_feed( $params ) {
 
-	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetch: About to fetch tweets via Twitter API' );
+	if ( $this->is_debug ) twcp_debug( 'Fetch: About to fetch tweets via Twitter API' );
 
 	$twitter_api = new tmhOAuth(array(
 		'consumer_key'    => get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ),
@@ -41,7 +47,7 @@ public function get_twitter_feed( $params ) {
 	));
 
 	$twitter_params = array(
-			'count' => 3,
+			'count' => $this->is_debug ? self::FETCH_COUNT_DEBUG : self::FETCH_COUNT,
 			'screen_name' => $params['screen_name'],
 			'trim_user' => true,
 			);
@@ -50,14 +56,17 @@ public function get_twitter_feed( $params ) {
 	}
 	if (isset( $params['max_id'] )) {
 		$twitter_params['max_id'] = $params['max_id'];
+		// We'll probably return the tweet with the given max ID, which will most likely be discarded,
+		// so to make up for that we fetch one extra.
+		++$twitter_params['count'];
 	}
-	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
+	if ( $this->is_debug ) twcp_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
 	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
 
 	if ( $twitter_api->response['code'] === 200 ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
+		if ( $this->is_debug ) twcp_debug( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
 		return array(
 			'tweets' => $tweet_list,
 			'error' => null,
@@ -85,7 +94,7 @@ returns an array
 */
 public function save_tweets($tweet_list, $params) {
 
-	if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Save: About to save tweets. count ' . count( $tweet_list ));
+	if ( $this->is_debug ) twcp_debug( 'Save: About to save tweets. count ' . count( $tweet_list ));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
@@ -123,7 +132,7 @@ public function save_tweets($tweet_list, $params) {
 		add_post_meta ($new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
 		add_post_meta ($new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $plain_text, 0, 25 ) . '...' ));
+		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
 		++$count;
 	}
 	return compact( 'count' );
@@ -138,7 +147,7 @@ function stop_duplicates($tweet)
                                               WHERE meta_key = 'tweetcopier_twitter_id'
                                               AND meta_value = '%s'", $tweet->id_str));
 	if ( 0 < $posts ) {
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
+		if ( $this->is_debug ) twcp_debug( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;

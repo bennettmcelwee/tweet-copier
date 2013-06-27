@@ -38,7 +38,7 @@ or by writing to the Free Software Foundation, Inc.,
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /** If true, write activity summaries to a log file. */
-define( 'TWEET_COPIER_LOG', true );
+define( 'TWEET_COPIER_LOG', false );
 
 /** If true, write activity details to a log file. */
 define( 'TWEET_COPIER_DEBUG', true );
@@ -52,7 +52,8 @@ require_once 'classes/class-tweet-copier-engine.php';
 // Instantiate necessary classes (use call_user_func to avoid global namespace)
 call_user_func( function() {
 	$plugin = new TweetCopier( __FILE__ );
-	if (is_admin()) {
+	$plugin->set_debug( TWEET_COPIER_DEBUG );
+	if ( is_admin() ) {
 		require_once 'classes/class-tweet-copier-settings.php';
 		$plugin_settings = new TweetCopierSettings( __FILE__, $plugin );
 	}
@@ -65,7 +66,7 @@ if ( TWEET_COPIER_LOG || TWEET_COPIER_DEBUG ) {
 		$message = rtrim( $message );
 		$message = str_replace( "\n", "\n                    " . $level . ' ', $message );
 		$message = current_time( 'mysql' ) . ' ' . $level . ' ' . $message . "\n";
-		error_log( $message, 3, TWEET_COPIER_LOG_FILE );
+		@error_log( $message, 3, TWEET_COPIER_LOG_FILE );
 	}
 } else {
 	function twcp_log( $level, $message ) {
