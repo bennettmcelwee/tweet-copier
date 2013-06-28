@@ -45,7 +45,6 @@ define( 'TWEET_COPIER_DEBUG', true );
 
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
-require_once 'lib/tmhUtilities.php';
 require_once 'classes/class-tweet-copier.php';
 require_once 'classes/class-tweet-copier-engine.php';
 
