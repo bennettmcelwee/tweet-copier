@@ -138,7 +138,7 @@ public function save_tweets($tweet_list, $params) {
 		add_post_meta ($new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
 		add_post_meta ($new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
+		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $tweet->text, 0, 40 ) . '...' ));
 		++$count;
 	}
 	return compact( 'count' );
@@ -146,14 +146,13 @@ public function save_tweets($tweet_list, $params) {
 
 function stop_duplicates($tweet)
 {
-	global $wpdb;
-
-	// FIXME: don't count trashed posts
-	$posts = $wpdb->get_var ($wpdb->prepare ("SELECT COUNT(*) FROM $wpdb->postmeta 
-                                              WHERE meta_key = 'tweetcopier_twitter_id'
-                                              AND meta_value = '%s'", $tweet->id_str));
-	if ( 0 < $posts ) {
-		if ( $this->is_debug ) twcp_debug( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 25 ) . '...' ));
+	$query = new WP_Query( array(
+		'post_type' => get_option( TweetCopier::POSTTYPE_OPTION ),
+		'meta_key' => 'tweetcopier_twitter_id',
+		'meta_value' => $tweet->id_str,
+	));
+	if ( $query->have_posts() ) {
+		if ( $this->is_debug ) twcp_debug( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 40 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;
