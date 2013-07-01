@@ -20,6 +20,7 @@ class TweetCopier {
 
 	const SCREENNAME_OPTION = 'tweet_copier_screenname';
 	const POSTTYPE_OPTION = 'tweet_copier_posttype';
+	const TITLE_FORMAT_OPTION = 'tweet_copier_title_format';
 	const AUTHOR_OPTION = 'tweet_copier_author';
 	const CATEGORY_OPTION = 'tweet_copier_category';
 	const HISTORY_OPTION = 'tweet_copier_history';
@@ -102,6 +103,7 @@ class TweetCopier {
 		} else if ( 0 < count( $twitter_result['tweets'] ) ) {
 			$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 				'screen_name' => $screen_name,
+				'title_format' => get_option( self::TITLE_FORMAT_OPTION ),
 				'author' => get_option( self::AUTHOR_OPTION ),
 				'posttype' => get_option( self::POSTTYPE_OPTION ),
 				'category' => get_option( self::CATEGORY_OPTION ),

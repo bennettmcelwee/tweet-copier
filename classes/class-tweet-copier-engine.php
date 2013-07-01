@@ -120,7 +120,7 @@ public function save_tweets($tweet_list, $params) {
 		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);
 		$processed_text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $processed_text);
 
-		$new_post = array('post_title' => trim( substr( $tweet->text, 0, 25 ) . '...' ),
+		$new_post = array('post_title' => $this->format_title( $tweet, $params['title_format'] ),
 						  'post_content' => trim( $processed_text ),
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
@@ -138,13 +138,13 @@ public function save_tweets($tweet_list, $params) {
 		add_post_meta ($new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
 		add_post_meta ($new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( substr( $tweet->text, 0, 40 ) . '...' ));
+		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 		++$count;
 	}
 	return compact( 'count' );
 }
 
-function stop_duplicates($tweet)
+function stop_duplicates( $tweet )
 {
 	$query = new WP_Query( array(
 		'post_type' => get_option( TweetCopier::POSTTYPE_OPTION ),
@@ -152,11 +152,32 @@ function stop_duplicates($tweet)
 		'meta_value' => $tweet->id_str,
 	));
 	if ( $query->have_posts() ) {
-		if ( $this->is_debug ) twcp_debug( 'Skipped duplicate tweet: ' . trim( substr( $tweet->text, 0, 40 ) . '...' ));
+		if ( $this->is_debug ) twcp_debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;
 	}
+}
+
+function format_title( $tweet, $format ) {
+	$title = $format;
+	if ( mb_strstr( $format, '%t' ) ) {
+		$text = $tweet->text;
+		if ( 40 < mb_strlen( $text ) ) {
+			$text = mb_substr( $text, 0, 40 );
+			$initial = mb_strrchr( $text, ' ', true );
+			if ( 20 < mb_strlen( $initial ) ) {
+				$text = $initial;
+			}
+			$text = rtrim( $text ) . '...';
+		}
+		$title = str_replace ( '%t', $text, $title );
+	}
+	if ( mb_strstr( $format, '%d' ) ) {
+		$date = date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $tweet->created_at ) );
+		$title = str_replace ( '%d', $date, $title );
+	}
+	return $title;
 }
 
 } // class TweetCopierEngine

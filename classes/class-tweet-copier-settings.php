@@ -65,10 +65,25 @@ class TweetCopierSettings {
 		</style>';
 		echo '<script>
 			addLoadEvent(function() {
-					jQuery("a.twcp-edit-button").click(function(event) {
+					var $ = jQuery;
+					$("a.twcp-edit-button").click(function(event) {
 						event.preventDefault();
-						jQuery("#" + jQuery(this).attr("for")).prop("readonly", false).focus();
-						jQuery(this).hide();
+						$("#" + $(this).attr("for")).prop("readonly", false).focus();
+						$(this).hide();
+					});
+					if ( ! $("#tweet_copier_title_format_custom").is(":checked")) {
+						$("#tweet_copier_title_format").prop("readonly", true);
+					};
+					$("input.tweet_copier_title_format_fixed").click(function(event) {
+						$("#tweet_copier_title_format").val($(this).data("format"))
+							.prop("readonly", true);
+					});
+					$("#tweet_copier_title_format").click(function(event) {
+						$(this).prop("readonly", false).focus();
+						$("#tweet_copier_title_format_custom").click();
+					});
+					$("#tweet_copier_title_format_custom").click(function(event) {
+						$("#tweet_copier_title_format").prop("readonly", false).focus();
 					});
 				});
 			</script>';
@@ -89,6 +104,8 @@ class TweetCopierSettings {
 		add_settings_section( self::SCHEDULE_SECTION , __( 'Scheduling' , 'tweet_copier_textdomain' ) , array( &$this , 'schedule_settings' ) , self::SETTINGS_PAGE );
 		
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
+		// This really just renders a single title on the left and some HTML on the right. In some cases it actually
+		// renders more than one field.
 		add_settings_field( TweetCopier::TWITTER_CONSUMER_KEY_OPTION, __( 'Consumer key:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'description' => 'Twitter application consumer key', 'label_for' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION ) );
@@ -109,6 +126,9 @@ class TweetCopierSettings {
 			array( &$this , 'render_field_history' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
 			array( 'fieldname' => TweetCopier::HISTORY_OPTION, 'description' => 'Copy all older tweets as well as new ones?' ) );
 
+		add_settings_field( TweetCopier::TITLE_FORMAT_OPTION, __( 'Title:' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_title' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
+			array( 'fieldname' => TweetCopier::TITLE_FORMAT_OPTION, 'description' => 'WordPress title to use for copied tweets' ) );
 		add_settings_field( TweetCopier::AUTHOR_OPTION, __( 'Author:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
 			array( 'fieldname' => TweetCopier::AUTHOR_OPTION, 'description' => 'WordPress author to use for copied tweets', 'label_for' => TweetCopier::AUTHOR_OPTION ) );
@@ -127,17 +147,18 @@ class TweetCopierSettings {
 			array( 'fieldname' => self::COPYNOW_OPTION, 'description' => 'Save your settings and copy tweets right now' ) );
 
 		// register_setting( $option_group, $option_name, $sanitize_callback );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_KEY_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_SECRET_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_TOKEN_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SECRET_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TITLE_FORMAT_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::AUTHOR_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::POSTTYPE_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::CATEGORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::COPYNOW_OPTION );
-		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_KEY_OPTION , 'trim' );
-		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_SECRET_OPTION , 'trim' );
-		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_TOKEN_OPTION , 'trim' );
-		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SECRET_OPTION , 'trim' );
 	}
 
 	public function fetch_settings() { echo '<p>' . __( 'How to fetch tweets from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
@@ -191,6 +212,40 @@ class TweetCopierSettings {
 		if ( get_option( TweetCopier::HISTORY_COMPLETE_OPTION )) {
 			echo '<span class="description">' . __( ' (We\'ve already copied all old tweets.)' , 'tweet_copier_textdomain' ) . '</span>';
 		}
+	}
+
+	public function render_field_title( $args ) {
+
+		$title_formats = array(
+			array( 'id' => 'text',   'format' => '%t', 'description' => __( 'The first few words of the tweet text' , 'tweet_copier_textdomain' ) ),
+			array( 'id' => 'time',   'format' => '%d', 'description' => ( __( 'The date and time of the tweet, for example ' , 'tweet_copier_textdomain' ) ) . date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) ),
+			array( 'id' => 'empty',  'format' => '',   'description' => __( 'No title' , 'tweet_copier_textdomain' ) ),
+			);
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		$option = get_option( $fieldname );
+		$value = '%t'; // default value
+		if ( $option && strlen( $option ) > 0 && $option != '' ) {
+			$value = $option;
+		}
+		$is_rendered = false; // so far
+		foreach ( $title_formats as $format ) {
+			$checked_state = '';
+			if ( $value == $format['format'] ) {
+				$is_rendered = true;
+				$checked_state = 'checked="checked"';
+			}
+			echo "<label for='{$fieldname}_{$format['id']}'>
+				<input id='{$fieldname}_{$format['id']}' data-format='{$format['format']}' type='radio' name='{$fieldname}_radio' class='{$fieldname}_fixed' $checked_state />
+				<span class='description'>{$format['description']}</span>
+				</label>
+				<br>";
+		}
+		$checked_state = ( ! $is_rendered ? 'checked="checked"' : '' );
+		echo "<label for='{$fieldname}_custom'><input id='{$fieldname}_custom' type='radio' name='{$fieldname}_radio' $checked_state />
+			<span class='description'>" . __( 'This title' , 'tweet_copier_textdomain' ) . "</span></label>
+			";
+		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description'/>";
 	}
 
 	public function render_field_author( $args ) {
@@ -332,7 +387,7 @@ class TweetCopierSettings {
 	}
 
 	public function sanitize_slug( $slug ) {
-		if( $slug && strlen( $slug ) > 0 && $slug != '' ) {
+		if( $slug && 0 < strlen( $slug ) && $slug != '' ) {
 			$slug = urlencode( strtolower( str_replace( ' ' , '-' , $slug ) ) );
 		}
 		return $slug;
