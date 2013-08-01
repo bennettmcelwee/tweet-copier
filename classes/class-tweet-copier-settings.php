@@ -59,11 +59,12 @@ class TweetCopierSettings {
 		if ( self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ))
 		  && self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ))
 		  && self::has_text( get_option( TweetCopier::TWITTER_USER_TOKEN_OPTION ))
-		  && self::has_text( get_option( TweetCopier::TWITTER_USER_SECRET_OPTION ))) {
+		  && self::has_text( get_option( TweetCopier::TWITTER_USER_SECRET_OPTION ))
+		  && self::has_text( get_option( TweetCopier::SCREENNAME_OPTION ))) {
 			// Everyting irie.
 		} else {
 			echo "<div id='message' class='error'><p><strong>" . __( "Tweet Copier is not active.", 'tweet_copier_textdomain' ) . "</strong> "
-				. sprintf( __( "You must %senter your Twitter authentication details%s before it can work.", 'tweet_copier_textdomain' ),
+				. sprintf( __( "You must %senter a Twitter screen name and authentication details%s before it can work.", 'tweet_copier_textdomain' ),
 					"<a href='options-general.php?page=" . self::SETTINGS_PAGE . "'>", "</a>" )
 				. "</p></div>";
 		}
