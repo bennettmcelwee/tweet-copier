@@ -174,10 +174,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = __( $args['description'] , 'tweet_copier_textdomain' );
 		$option = get_option( $fieldname );
-		$value = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : '' );
 		$is_readonly = ( $value !== '' );
 		$readonly_attr = $is_readonly ? 'readonly="readonly"' : '';
 		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description regular-text code' $readonly_attr/>";
@@ -192,10 +189,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = __( $args['description'] , 'tweet_copier_textdomain' );
 		$option = get_option( $fieldname );
-		$value = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : '' );
 		echo "<span class='description'>@</span>
 			<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description'/>
 			<span class='description'>$description</span>";
@@ -224,10 +218,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$value = '%t'; // default value
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : '%t' );
 		$is_rendered = false; // so far
 		foreach ( $title_formats as $format ) {
 			$checked_state = '';
@@ -253,10 +244,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$value = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : '' );
 		wp_dropdown_users( array( 'id' => $fieldname, 'name' => $fieldname, 'selected' => $value ) );
 		echo '<span class="description">' . __( $description , 'tweet_copier_textdomain' ) . '</span>';
 	}
@@ -266,10 +254,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$value = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : '' );
 
 		$post_types = get_post_types( array( 'public' => true ), 'objects' );
 
@@ -300,10 +285,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$value = '';
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : '' );
 
 		$categories = get_categories( 'hide_empty=0' );
 
@@ -338,10 +320,7 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		$value = 'daily'; // default value
-		if ( $option && strlen( $option ) > 0 && $option != '' ) {
-			$value = $option;
-		}
+		$value = ( self::has_text($option) ? $option : 'daily' );
 		$schedules = array( self::SCHEDULE_VALUE_MANUAL => array( 'display' => 'Manual Only' ))
 		           + wp_get_schedules();
 
@@ -442,4 +421,7 @@ class TweetCopierSettings {
 	/></form><?php
 	}
 
+	private static function has_text( $string ) {
+		return ( is_string( $string ) && 0 < strlen( $string ) );
+	}
 }
