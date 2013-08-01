@@ -42,6 +42,9 @@ class TweetCopierSettings {
 		// Add settings page to menu
 		add_action( 'admin_menu' , array( &$this , 'add_settings_page' ) );
 
+		// Add warning if plugin is not configured
+		add_action( 'admin_menu' , array( &$this , 'check_configuration' ) );
+
 		// Add settings link to plugins page
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
 
@@ -51,11 +54,25 @@ class TweetCopierSettings {
 
 	}
 
+	public function check_configuration() {
+
+		if ( self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ))
+		  && self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ))
+		  && self::has_text( get_option( TweetCopier::TWITTER_USER_TOKEN_OPTION ))
+		  && self::has_text( get_option( TweetCopier::TWITTER_USER_SECRET_OPTION ))) {
+			// Everyting irie.
+		} else {
+			echo "<div id='message' class='error'><p><strong>" . __( "Tweet Copier is not active.", 'tweet_copier_textdomain' ) . "</strong> "
+				. sprintf( __( "You must %senter your Twitter authentication details%s before it can work.", 'tweet_copier_textdomain' ),
+					"<a href='options-general.php?page=" . self::SETTINGS_PAGE . "'>", "</a>" )
+				. "</p></div>";
+		}
+	}
+
 	public function add_settings_page() {
 		// add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function);
 		$hook_suffix = add_options_page( 'Tweet Copier Settings' , 'Tweet Copier' , 'manage_options' , self::SETTINGS_PAGE ,  array( &$this , 'settings_page' ) );
 		add_action( "admin_print_scripts-$hook_suffix", array( &$this , 'settings_page_head' ) );
-
 	}
 
 	public function settings_page_head() {
