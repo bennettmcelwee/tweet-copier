@@ -133,10 +133,10 @@ public function save_tweets($tweet_list, $params) {
 			continue;
 		}
 		$new_post_id = wp_insert_post($new_post);
-
-		add_post_meta ($new_post_id, 'tweetcopier_twitter_id', $tweet->id_str, true);
-		add_post_meta ($new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
-		add_post_meta ($new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
+		set_post_format( $new_post_id, 'status' );
+		add_post_meta( $new_post_id, 'tweetcopier_twitter_id', $tweet->id_str, true);
+		add_post_meta( $new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
+		add_post_meta( $new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
 		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 		++$count;
