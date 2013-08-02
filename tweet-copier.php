@@ -6,8 +6,8 @@
  * Description: Im in ur Wordprez. Copyng ur tweetz.
  * Author: Bennett McElwee
  * Author URI: http://thunderguy.com/
- * Requires at least: 3.0
- * Tested up to: 3.5.1
+ * Requires at least: 3.1
+ * Tested up to: 3.6
  * Licence: GPLv2 or later
  * 
  * @package Tweet Copier
