@@ -109,7 +109,7 @@ class TweetCopierSettings {
 
 	public function add_settings_link( $links ) {
 		$settings_link = '<a href="options-general.php?page=' . self::SETTINGS_PAGE . '">Settings</a>';
-  		array_push( $links, $settings_link );
+  		array_unshift( $links, $settings_link );
   		return $links;
 	}
 
