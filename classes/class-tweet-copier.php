@@ -139,6 +139,7 @@ class TweetCopier {
 					} else {
 						$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 							'screen_name' => $screen_name,
+							'title_format' => get_option( self::TITLE_FORMAT_OPTION ),
 							'author' => get_option( self::AUTHOR_OPTION ),
 							'category' => get_option( self::CATEGORY_OPTION ),
 						));
