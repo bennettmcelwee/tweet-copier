@@ -19,7 +19,6 @@ class TweetCopier {
 	const TWITTER_USER_SECRET_OPTION     = 'tweet_copier_user_secret';
 
 	const SCREENNAME_OPTION = 'tweet_copier_screenname';
-	const POSTTYPE_OPTION = 'tweet_copier_posttype';
 	const TITLE_FORMAT_OPTION = 'tweet_copier_title_format';
 	const AUTHOR_OPTION = 'tweet_copier_author';
 	const CATEGORY_OPTION = 'tweet_copier_category';
@@ -105,7 +104,6 @@ class TweetCopier {
 				'screen_name' => $screen_name,
 				'title_format' => get_option( self::TITLE_FORMAT_OPTION ),
 				'author' => get_option( self::AUTHOR_OPTION ),
-				'posttype' => get_option( self::POSTTYPE_OPTION ),
 				'category' => get_option( self::CATEGORY_OPTION ),
 			));
 			$message = 'Copied ' . $save_result['count'] . ' new tweets from @' . $screen_name;
@@ -142,7 +140,6 @@ class TweetCopier {
 						$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 							'screen_name' => $screen_name,
 							'author' => get_option( self::AUTHOR_OPTION ),
-							'posttype' => get_option( self::POSTTYPE_OPTION ),
 							'category' => get_option( self::CATEGORY_OPTION ),
 						));
 						$message = 'Copied ' . $save_result['count'] . ' old tweets from @' . $screen_name;
@@ -158,7 +155,6 @@ class TweetCopier {
 
 		$query = new WP_Query( array(
 			// tweets by this user
-			'post_type' => get_option( self::POSTTYPE_OPTION ),
 			'meta_key' => 'tweetcopier_twitter_author',
 			'meta_value' => $screen_name,
 			// Get the tweet at the limit

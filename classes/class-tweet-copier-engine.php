@@ -93,7 +93,6 @@ public function get_twitter_feed( $params ) {
 Save a list of tweets as WordPress posts.
 $params is an array:
 	author
-	posttype
 	category
 returns an array
 	count
@@ -125,7 +124,6 @@ public function save_tweets($tweet_list, $params) {
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_author' => $params['author'],
-						  'post_type' => $params['posttype'],
 						  'post_category' => array($params['category']),
 						  'post_status' => 'publish');
 		$new_post = apply_filters($this->namespace . '_new_post_before_create', $new_post); // Offer the chance to manipulate new post data. return false to skip
@@ -147,7 +145,6 @@ public function save_tweets($tweet_list, $params) {
 function stop_duplicates( $tweet )
 {
 	$query = new WP_Query( array(
-		'post_type' => get_option( TweetCopier::POSTTYPE_OPTION ),
 		'meta_key' => 'tweetcopier_twitter_id',
 		'meta_value' => $tweet->id_str,
 	));

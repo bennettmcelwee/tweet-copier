@@ -150,9 +150,6 @@ class TweetCopierSettings {
 		add_settings_field( TweetCopier::AUTHOR_OPTION, __( 'Author:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_author' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
 			array( 'fieldname' => TweetCopier::AUTHOR_OPTION, 'description' => 'WordPress author to use for copied tweets', 'label_for' => TweetCopier::AUTHOR_OPTION ) );
-		add_settings_field( TweetCopier::POSTTYPE_OPTION, __( 'Post type:' , 'tweet_copier_textdomain' ) ,
-			array( &$this , 'render_field_posttype' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
-			array( 'fieldname' => TweetCopier::POSTTYPE_OPTION, 'description' => 'WordPress post type to use for copied tweets', 'label_for' => TweetCopier::POSTTYPE_OPTION ) );
 		add_settings_field( TweetCopier::CATEGORY_OPTION, __( 'Category:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_category' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
 			array( 'fieldname' => TweetCopier::CATEGORY_OPTION, 'description' => 'Category to use for copied tweets', 'label_for' => TweetCopier::CATEGORY_OPTION ) );
@@ -173,7 +170,6 @@ class TweetCopierSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TITLE_FORMAT_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::AUTHOR_OPTION , array( &$this , 'sanitize_slug' ) );
-		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::POSTTYPE_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::CATEGORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::SCHEDULE_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::COPYNOW_OPTION );
@@ -264,37 +260,6 @@ class TweetCopierSettings {
 		$option = get_option( $fieldname );
 		$value = ( self::has_text($option) ? $option : '' );
 		wp_dropdown_users( array( 'id' => $fieldname, 'name' => $fieldname, 'selected' => $value ) );
-		echo '<span class="description">' . __( $description , 'tweet_copier_textdomain' ) . '</span>';
-	}
-
-	public function render_field_posttype( $args ) {
-
-		$fieldname = $args['fieldname'];
-		$description = $args['description'];
-		$option = get_option( $fieldname );
-		$value = ( self::has_text($option) ? $option : '' );
-
-		$post_types = get_post_types( array( 'public' => true ), 'objects' );
-
-		// Figure out which type should be initially selected
-		$selected_post_type = $value;
-		if ( $value === '' ) {
-			// Pre-select an appropriate type if there is one
-			foreach ( $post_types as $post_type_id => $post_type ) {
-				if ($post_type->label == 'Twitter' || $post_type->label == 'Tweets' || $post_type->label == 'Tweet') {
-					$selected_post_type = $post_type_id;
-					break;
-				}
-			}
-		}
-
-		// Render the list
-		echo '<select name="' . $fieldname . '" id="' . $fieldname . '" >';
-		foreach ( $post_types  as $post_type_id => $post_type ) {
-			$selected = ( $selected_post_type == $post_type_id ) ? 'selected="selected"' : '';
-			echo '<option value="' . $post_type_id . '" ' . $selected . '>' . $post_type->label . '</option>';
-		}
-		echo '</select>';
 		echo '<span class="description">' . __( $description , 'tweet_copier_textdomain' ) . '</span>';
 	}
 
