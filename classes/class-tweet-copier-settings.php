@@ -68,10 +68,10 @@ class TweetCopierSettings {
 		  && self::has_text( get_option( TweetCopier::SCREENNAME_OPTION ))) {
 			// Everyting irie.
 		} else {
-			echo "<div id='message' class='error'><p><strong>" . __( "Tweet Copier is not active.", 'tweet_copier_textdomain' ) . "</strong> "
+			$message = __( 'Tweet Copier is not active.', 'tweet_copier_textdomain' ) . ' '
 				. sprintf( __( 'Please %senter a Twitter screen name and authentication details%s.', 'tweet_copier_textdomain' ),
-					'<a href="' . $this->get_settings_url_relative() . '">', '</a>' )
-				. '</p></div>';
+					'<a href="' . $this->get_settings_url_relative() . '">', '</a>' );
+			add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
 		}
 	}
 
@@ -463,7 +463,7 @@ class TweetCopierSettings {
 		));
 
 		if ( $code != 200 ) {
-			error("There was an error communicating with Twitter. {$twitter_api->response['response']}");
+			$this->plugin->checkpoint( 'error', __('There was an error communicating with Twitter: ' . $twitter_api->response['response']));
 			return;
 		}
 
