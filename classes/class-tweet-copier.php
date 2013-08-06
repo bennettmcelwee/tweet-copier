@@ -175,7 +175,7 @@ class TweetCopier {
 	/**
 		Update a checkpoint for a given category. These are displayed on the settings page.
 	*/
-	private function checkpoint( $category, $message ) {
+	public function checkpoint( $category, $message ) {
 		$option = 'tweet_copier_' . $category;
 		$timestamped_message = current_time( 'mysql' ) . ' ' . $message;
 		if ( ! add_option( $option, $timestamped_message, '', 'no' )) {

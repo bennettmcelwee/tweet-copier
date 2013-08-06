@@ -22,6 +22,7 @@ class TweetCopierSettings {
 	const SCHEDULE_OPTION = 'tweet_copier_schedule';
 	const SCHEDULE_VALUE_MANUAL = 'manual';
 	const COPYNOW_OPTION = 'tweet_copier_copy_now';
+	const TWITTERAUTH_OPTION = 'tweet_copier_twitter_auth';
 
 	private $plugin;
 	private $dir;
@@ -36,6 +37,9 @@ class TweetCopierSettings {
 		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
 		$this->assets_url = esc_url( trailingslashit( plugins_url( '/assets/', $file ) ) );
 
+		// Check whether we need to redirect for Twitter auth (high priority)
+		add_action( 'init', array( &$this , 'check_for_twitter_response' ), 0 );
+
 		// Register plugin settings
 		add_action( 'admin_init' , array( &$this , 'register_settings' ) );
 
@@ -49,6 +53,7 @@ class TweetCopierSettings {
 		add_filter( 'plugin_action_links_' . plugin_basename( $this->file ) , array( &$this , 'add_settings_link' ) );
 
 		// Set up filters to run actions as settings are saved
+		add_filter( 'pre_update_option_' . self::TWITTERAUTH_OPTION , array( &$this , 'filter_twitter_auth' ), 10, 2 );
 		add_filter( 'pre_update_option_' . self::SCHEDULE_OPTION , array( &$this , 'filter_schedule' ), 10, 2 );
 		add_filter( 'pre_update_option_' . self::COPYNOW_OPTION , array( &$this , 'filter_copy_now' ), 10, 2 );
 
@@ -64,9 +69,9 @@ class TweetCopierSettings {
 			// Everyting irie.
 		} else {
 			echo "<div id='message' class='error'><p><strong>" . __( "Tweet Copier is not active.", 'tweet_copier_textdomain' ) . "</strong> "
-				. sprintf( __( "You must %senter a Twitter screen name and authentication details%s before it can work.", 'tweet_copier_textdomain' ),
-					"<a href='options-general.php?page=" . self::SETTINGS_PAGE . "'>", "</a>" )
-				. "</p></div>";
+				. sprintf( __( 'Please %senter a Twitter screen name and authentication details%s.', 'tweet_copier_textdomain' ),
+					'<a href="' . $this->get_settings_url_relative() . '">', '</a>' )
+				. '</p></div>';
 		}
 	}
 
@@ -107,8 +112,16 @@ class TweetCopierSettings {
 			</script>';
 	}
 
+	public function get_settings_url_absolute() {
+		return admin_url( $this->get_settings_url_relative() );
+	}
+
+	public function get_settings_url_relative() {
+		return 'options-general.php?page=' . self::SETTINGS_PAGE;
+	}
+
 	public function add_settings_link( $links ) {
-		$settings_link = '<a href="options-general.php?page=' . self::SETTINGS_PAGE . '">Settings</a>';
+		$settings_link = '<a href="' . $this->get_settings_url_relative() . '">Settings</a>';
   		array_unshift( $links, $settings_link );
   		return $links;
 	}
@@ -136,6 +149,9 @@ class TweetCopierSettings {
 		add_settings_field( TweetCopier::TWITTER_USER_SECRET_OPTION, __( 'User secret:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION ) );
+		add_settings_field( self::TWITTERAUTH_OPTION, __( 'Authenticate' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_twitterauth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => self::TWITTERAUTH_OPTION, 'description' => 'Authenticate with Twitter' ) );
 
 		add_settings_field( TweetCopier::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_screenname' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
@@ -166,6 +182,7 @@ class TweetCopierSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_SECRET_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_TOKEN_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SECRET_OPTION , 'trim' );
+		register_setting( self::SETTINGS_OPTION_GROUP , self::TWITTERAUTH_OPTION );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TITLE_FORMAT_OPTION , 'trim' );
@@ -196,6 +213,15 @@ class TweetCopierSettings {
 			echo "<a class='twcp-edit-button' for='$fieldname' href='#' >edit</a>";
 		}
 		echo "<span class='description'>$description</span>";
+	}
+
+	public function render_field_twitterauth( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
+		// submit_button( $text, $type, $name, $wrap, $other_attributes )
+		submit_button( __( 'Authenticate' , 'tweet_copier_textdomain' ), 'secondary', $fieldname, false );
+		echo '<span class="description">' . $description . '</span>';
 	}
 
 	public function render_field_screenname( $args ) {
@@ -325,6 +351,18 @@ class TweetCopierSettings {
 		echo '<span class="description">' . $description . '</span>';
 	}
 
+	// Process a click on the Twitter Auth button
+	public function filter_twitter_auth( $newvalue, $oldvalue ) {
+
+		// HACK: updated options are available here, but only because this button comes after the form fields.
+		// If there's a new value then this button was clicked, so do the copy now
+		if ( $newvalue != '' ) {
+			$this->twitter_request_token();
+		}
+		// Return the old value so it doesn't get saved
+		return $oldvalue;
+	}
+
 	// Process a change in the filter setting, by updating the schedule
 	public function filter_schedule( $newvalue, $oldvalue ) {
 		if ( $newvalue !== $oldvalue ) {
@@ -406,5 +444,105 @@ class TweetCopierSettings {
 
 	private static function has_text( $string ) {
 		return ( is_string( $string ) && 0 < strlen( $string ) );
+	}
+
+	private function twitter_request_token() {
+		// Step 1: Request a temporary token and
+		// Step 2: Direct the user to the authorize web page
+		$twitter_api = new tmhOAuth(array(
+			'consumer_key'    => get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ),
+			'consumer_secret' => get_option( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ),
+		));
+		$code = $twitter_api->apponly_request(array(
+			'without_bearer' => true,
+			'method' => 'POST',
+			'url' => $twitter_api->url('oauth/request_token', ''),
+			'params' => array(
+				'oauth_callback' => $this->get_settings_url_absolute(),
+			),
+		));
+
+		if ( $code != 200 ) {
+			error("There was an error communicating with Twitter. {$twitter_api->response['response']}");
+			return;
+		}
+
+		// store the params so they are there when we come back after the redirect
+		$oauth = $twitter_api->extract_params($twitter_api->response['response']);
+		set_transient( 'tweet-copy-oauth-' . get_current_user_id(), $oauth, MINUTE_IN_SECONDS );
+
+		// check the callback has been confirmed
+		if ( $oauth['oauth_callback_confirmed'] !== 'true' ) {
+			$this->plugin->checkpoint( 'error', __('Twitter authentication callback was not confirmed by Twitter.'));
+		} else {
+			$url = $twitter_api->url('oauth/authorize', '') . "?oauth_token={$oauth['oauth_token']}";
+			// TODO redirect
+			?>
+			<p>To complete the OAuth flow please visit URL: <a href="<?php echo $url ?>"><?php echo $url ?></a></p>
+			<?php
+			die();
+		}
+	}
+
+	public function check_for_twitter_response() {
+		$params = $this->uri_params();
+		if ( isset( $params['oauth_token'] )) {
+			$this->twitter_access_token($params);
+		}
+	}
+
+	private function twitter_access_token($params) {
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'twitter_access_token');
+		$oauth = get_transient( 'tweet-copy-oauth-' . get_current_user_id() );
+
+		if ($params['oauth_token'] !== $oauth['oauth_token']) {
+			$this->plugin->checkpoint( 'error', __('Twitter authentication token mismatch. Do you have multiple tabs open?'));
+			return;
+		}
+
+		if (!isset($params['oauth_verifier'])) {
+			$this->plugin->checkpoint( 'error', __('Twitter authentication oauth verifier missing. Did you deny the appliction access?'));
+			return;
+		}
+
+		// update with the temporary token and secret
+		$twitter_api = new tmhOAuth(array(
+			'consumer_key'    => get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ),
+			'consumer_secret' => get_option( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ),
+		));
+		$twitter_api->reconfigure(array_merge($twitter_api->config, array(
+			'token'  => $oauth['oauth_token'],
+			'secret' => $oauth['oauth_token_secret'],
+		)));
+
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'twitter_access_token requesting permanent token');
+		// Request the permanent token
+		$code = $twitter_api->user_request(array(
+			'method' => 'POST',
+			'url' => $twitter_api->url('oauth/access_token', ''),
+			'params' => array(
+				'oauth_verifier' => trim($params['oauth_verifier']),
+			)
+		));
+
+		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'twitter_access_token result ' . $code);
+		if ( $code == 200 ) {
+			$oauth_creds = $twitter_api->extract_params($twitter_api->response['response']);
+			update_option( TweetCopier::TWITTER_USER_TOKEN_OPTION, $oauth_creds['oauth_token'] );
+			update_option( TweetCopier::TWITTER_USER_SECRET_OPTION, $oauth_creds['oauth_token_secret'] );
+			$this->plugin->checkpoint( 'info', __('Twitter authentication details have been saved') );
+			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user token: ' . $oauth_creds['oauth_token']);
+			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user secret: ' . $oauth_creds['oauth_token_secret']);
+		}
+	}
+	
+	function uri_params() {
+		$url = parse_url($_SERVER['REQUEST_URI']);
+		$params = array();
+		foreach (explode('&', $url['query']) as $p) {
+			list($k, $v) = explode('=', $p);
+			$params[$k] =$v;
+		}
+		return $params;
 	}
 }
