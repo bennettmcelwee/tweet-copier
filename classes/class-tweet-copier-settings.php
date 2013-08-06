@@ -476,11 +476,9 @@ class TweetCopierSettings {
 			$this->plugin->checkpoint( 'error', __('Twitter authentication callback was not confirmed by Twitter.'));
 		} else {
 			$url = $twitter_api->url('oauth/authorize', '') . "?oauth_token={$oauth['oauth_token']}";
-			// TODO redirect
-			?>
-			<p>To complete the OAuth flow please visit URL: <a href="<?php echo $url ?>"><?php echo $url ?></a></p>
-			<?php
-			die();
+			header( 'Location: ' . $url );
+			// stop now and let the redirect happen
+			exit;
 		}
 	}
 
@@ -539,9 +537,11 @@ class TweetCopierSettings {
 	function uri_params() {
 		$url = parse_url($_SERVER['REQUEST_URI']);
 		$params = array();
-		foreach (explode('&', $url['query']) as $p) {
-			list($k, $v) = explode('=', $p);
-			$params[$k] =$v;
+		if ( isset( $url['query'] )) {
+			foreach (explode('&', $url['query']) as $p) {
+				list($k, $v) = explode('=', $p);
+				$params[$k] =$v;
+			}
 		}
 		return $params;
 	}
