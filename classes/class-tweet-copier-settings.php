@@ -69,7 +69,7 @@ class TweetCopierSettings {
 			// Everyting irie.
 		} else {
 			$message = __( 'Tweet Copier is not active.', 'tweet_copier_textdomain' ) . ' '
-				. sprintf( __( 'Please %senter a Twitter screen name and authentication details%s.', 'tweet_copier_textdomain' ),
+				. sprintf( __( 'Please complete your %sTweet Copier settings%s.', 'tweet_copier_textdomain' ),
 					'<a href="' . $this->get_settings_url_relative() . '">', '</a>' );
 			add_settings_error( 'general', 'tweet_copier', $message, 'updated' );
 		}
