@@ -59,12 +59,17 @@ class TweetCopierSettings {
 
 	}
 
-	public function check_configuration() {
+	private function is_auth_configuration_complete() {
 
-		if ( self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ))
+		return ( self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ))
 		  && self::has_text( get_option( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ))
 		  && self::has_text( get_option( TweetCopier::TWITTER_USER_TOKEN_OPTION ))
-		  && self::has_text( get_option( TweetCopier::TWITTER_USER_SECRET_OPTION ))
+		  && self::has_text( get_option( TweetCopier::TWITTER_USER_SECRET_OPTION )));
+	}
+
+	public function check_configuration() {
+
+		if ( $this->is_auth_configuration_complete()
 		  && self::has_text( get_option( TweetCopier::SCREENNAME_OPTION ))) {
 			// Everyting irie.
 		} else {
@@ -85,6 +90,15 @@ class TweetCopierSettings {
 
 		echo '<style>
 			.twcp-edit-button { margin: 0 0.5em; text-decoration: underline; }
+			.settings-section-tweet_copier_auth_settings .settings-section-content {
+				display: none;
+			}
+			.auth-config-incomplete .settings-section-tweet_copier_auth_settings .settings-section-content {
+				display: block;
+			}
+			.auth-config-incomplete .tweet_copier_auth_expander {
+				display: none;
+			}
 		</style>';
 		echo '<script>
 			addLoadEvent(function() {
@@ -107,6 +121,9 @@ class TweetCopierSettings {
 					});
 					$("#tweet_copier_title_format_custom").click(function(event) {
 						$("#tweet_copier_title_format").prop("readonly", false).focus();
+					});
+					$(".tweet_copier_auth_expander").click(function(event) {
+						$(this).hide().closest(".settings-section-tweet_copier_auth_settings").find(".settings-section-content").slideDown();
 					});
 				});
 			</script>';
@@ -149,7 +166,7 @@ class TweetCopierSettings {
 		add_settings_field( TweetCopier::TWITTER_USER_SECRET_OPTION, __( 'User secret:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION ) );
-		add_settings_field( self::TWITTERAUTH_OPTION, __( 'Authenticate' , 'tweet_copier_textdomain' ) ,
+		add_settings_field( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, __( 'Authenticate' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_twitterauth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => self::TWITTERAUTH_OPTION, 'description' => 'Authenticate with Twitter' ) );
 
@@ -192,13 +209,19 @@ class TweetCopierSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , self::COPYNOW_OPTION );
 	}
 
+	public function auth_settings() { 
+		echo '<p>'
+				. __( 'Authentication details for fetching information from Twitter.' , 'tweet_copier_textdomain' )
+				. ' <a class="tweet_copier_auth_expander" href="#">' . __( 'details' , 'tweet_copier_textdomain' ) . '</a>'
+				. '</p>';
+		echo '<p class="settings-section-content">' . __( 'Detailed instructions.' , 'tweet_copier_textdomain' ) . '</p>';
+	}
+
 	public function fetch_settings() { echo '<p>' . __( 'How to fetch tweets from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
 
 	public function import_settings() { echo '<p>' . __( 'How to save tweets into your blog.' , 'tweet_copier_textdomain' ) . '</p>'; }
 
 	public function schedule_settings() { echo '<p>' . __( 'How often to copy tweets.' , 'tweet_copier_textdomain' ) . '</p>'; }
-
-	public function auth_settings() { echo '<p>' . __( 'Authentication details for fetching information from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
 
 	public function render_field_auth( $args ) {
 
@@ -219,6 +242,8 @@ class TweetCopierSettings {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
+		$option = get_option( $fieldname );
+		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description regular-text' readonly='readonly'/>";
 		// submit_button( $text, $type, $name, $wrap, $other_attributes )
 		submit_button( __( 'Authenticate' , 'tweet_copier_textdomain' ), 'secondary', $fieldname, false );
 		echo '<span class="description">' . $description . '</span>';
@@ -393,17 +418,75 @@ class TweetCopierSettings {
 		return $slug;
 	}
 
+	/**
+	 * Prints out all settings sections added to a particular settings page.
+	 *
+	 * This is copied and modified from wp-admin/includes/template.php
+	 * Here we add classes for each section and title and content to allow styling.
+	 */
+	private function do_settings_sections( $page ) {
+		global $wp_settings_sections, $wp_settings_fields;
+
+		if ( ! isset( $wp_settings_sections ) || !isset( $wp_settings_sections[$page] ) )
+			return;
+
+		foreach ( (array) $wp_settings_sections[$page] as $section ) {
+			echo "<div class=\"settings-section settings-section-{$section['id']}\">\n";
+			if ( $section['title'] )
+				echo "<h3 class=\"settings-section-title\">{$section['title']}</h3>\n";
+
+			if ( $section['callback'] )
+				call_user_func( $section['callback'], $section );
+
+			echo "<div class=\"settings-section-content\">\n";
+			if ( ! isset( $wp_settings_fields ) || !isset( $wp_settings_fields[$page] ) || !isset( $wp_settings_fields[$page][$section['id']] ) ) {
+				// do nothing
+			} else {
+				echo '<table class="form-table">';
+				do_settings_fields( $page, $section['id'] );
+				echo '</table>';
+			}
+			echo "</div>\n";
+			echo "</div>\n";
+		}
+	}
+
+	/**
+	 * Print out the settings fields for a particular settings section
+	 *
+	 * This is copied and modified from wp-admin/includes/template.php
+	 * Here we add classes for each row to allow styling.
+	 */
+	function do_settings_fields($page, $section) {
+		global $wp_settings_fields;
+
+		if ( !isset($wp_settings_fields) || !isset($wp_settings_fields[$page]) || !isset($wp_settings_fields[$page][$section]) )
+			return;
+
+		foreach ( (array) $wp_settings_fields[$page][$section] as $field ) {
+			echo "<tr valign=\"top\" class=\"settings-field settings-field-{$field['id']}\">";
+			if ( !empty($field['args']['label_for']) )
+				echo '<th scope="row"><label for="' . esc_attr( $field['args']['label_for'] ) . '">' . $field['title'] . '</label></th>';
+			else
+				echo '<th scope="row">' . $field['title'] . '</th>';
+			echo '<td>';
+			call_user_func($field['callback'], $field['args']);
+			echo '</td>';
+			echo '</tr>';
+		}
+	}
 	public function settings_page() {
 
+		$class = $this->is_auth_configuration_complete() ? '' : 'auth-config-incomplete';
 		echo '<div class="wrap">
 				<div class="icon32" id="icon-options-general"><br/></div>
 				<h2>Tweet Copier Settings</h2>
-				<form method="post" action="options.php" enctype="multipart/form-data">';
+				<form method="post" action="options.php" enctype="multipart/form-data" class="' . $class . '">';
 
 				// settings_fields( $option_group )
 				settings_fields( self::SETTINGS_OPTION_GROUP );
 				// do_settings_sections( $page )
-				do_settings_sections( self::SETTINGS_PAGE );
+				$this->do_settings_sections( self::SETTINGS_PAGE );
 				
 				submit_button( __( 'Save Settings' , 'tweet_copier_textdomain' ) );
 				
@@ -528,6 +611,7 @@ class TweetCopierSettings {
 			$oauth_creds = $twitter_api->extract_params($twitter_api->response['response']);
 			update_option( TweetCopier::TWITTER_USER_TOKEN_OPTION, $oauth_creds['oauth_token'] );
 			update_option( TweetCopier::TWITTER_USER_SECRET_OPTION, $oauth_creds['oauth_token_secret'] );
+			update_option( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, $oauth_creds['screnn_name'] );
 			$this->plugin->checkpoint( 'info', __('Twitter authentication details have been saved') );
 			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user token: ' . $oauth_creds['oauth_token']);
 			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user secret: ' . $oauth_creds['oauth_token_secret']);

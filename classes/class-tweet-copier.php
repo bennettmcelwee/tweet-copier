@@ -17,6 +17,7 @@ class TweetCopier {
 	// TODO Get the user stuff via oAuth
 	const TWITTER_USER_TOKEN_OPTION      = 'tweet_copier_user_token';
 	const TWITTER_USER_SECRET_OPTION     = 'tweet_copier_user_secret';
+	const TWITTER_USER_SCREENNAME_OPTION = 'tweet_copier_user_screenname';
 
 	const SCREENNAME_OPTION = 'tweet_copier_screenname';
 	const TITLE_FORMAT_OPTION = 'tweet_copier_title_format';
