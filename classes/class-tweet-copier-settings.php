@@ -99,8 +99,14 @@ class TweetCopierSettings {
 			.auth-config-incomplete .tweet_copier_auth_expander {
 				display: none;
 			}
+			.settings-field-tweet_copier_user_token, .settings-field-tweet_copier_user_secret {
+				display: none;
+			}
 		</style>';
 		echo '<script>
+			function tcadvancedmode() {
+				jQuery(".settings-field-tweet_copier_user_token,.settings-field-tweet_copier_user_secret").css({display: "table-row"});
+			}
 			addLoadEvent(function() {
 					var $ = jQuery;
 					$("a.twcp-edit-button").click(function(event) {
@@ -124,6 +130,7 @@ class TweetCopierSettings {
 					});
 					$(".tweet_copier_auth_expander").click(function(event) {
 						$(this).hide().closest(".settings-section-tweet_copier_auth_settings").find(".settings-section-content").slideDown();
+						event.preventDefault();
 					});
 				});
 			</script>';
@@ -445,7 +452,7 @@ class TweetCopierSettings {
 				// do nothing
 			} else {
 				echo '<table class="form-table">';
-				do_settings_fields( $page, $section['id'] );
+				$this->do_settings_fields( $page, $section['id'] );
 				echo '</table>';
 			}
 			echo "</div>\n";
