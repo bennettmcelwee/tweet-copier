@@ -166,9 +166,9 @@ class TweetCopierSettings {
 		add_settings_field( TweetCopier::TWITTER_USER_SECRET_OPTION, __( 'User secret:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION ) );
-		add_settings_field( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, __( 'Authenticate' , 'tweet_copier_textdomain' ) ,
+		add_settings_field( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, __( 'Authenticated Twitter user' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_twitterauth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => self::TWITTERAUTH_OPTION, 'description' => 'Authenticate with Twitter' ) );
+			array( 'fieldname' => TweetCopier::TWITTER_USER_SCREENNAME_OPTION, 'description' => 'Authenticated Twitter user' ) );
 
 		add_settings_field( TweetCopier::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_screenname' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
@@ -199,6 +199,7 @@ class TweetCopierSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_CONSUMER_SECRET_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_TOKEN_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SECRET_OPTION , 'trim' );
+		// no updating register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SCREENNAME_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::TWITTERAUTH_OPTION );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
@@ -243,10 +244,11 @@ class TweetCopierSettings {
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
 		$option = get_option( $fieldname );
-		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description regular-text' readonly='readonly'/>";
-		// submit_button( $text, $type, $name, $wrap, $other_attributes )
-		submit_button( __( 'Authenticate' , 'tweet_copier_textdomain' ), 'secondary', $fieldname, false );
+		$value = ( self::has_text($option) ? $option : '' );
+		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description' readonly='readonly'/>";
 		echo '<span class="description">' . $description . '</span>';
+		// submit_button( $text, $type, $name, $wrap, $other_attributes )
+		submit_button( __( 'Authenticate' , 'tweet_copier_textdomain' ), 'secondary', self::TWITTERAUTH_OPTION, false );
 	}
 
 	public function render_field_screenname( $args ) {
@@ -611,10 +613,11 @@ class TweetCopierSettings {
 			$oauth_creds = $twitter_api->extract_params($twitter_api->response['response']);
 			update_option( TweetCopier::TWITTER_USER_TOKEN_OPTION, $oauth_creds['oauth_token'] );
 			update_option( TweetCopier::TWITTER_USER_SECRET_OPTION, $oauth_creds['oauth_token_secret'] );
-			update_option( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, $oauth_creds['screnn_name'] );
+			update_option( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, $oauth_creds['screen_name'] );
 			$this->plugin->checkpoint( 'info', __('Twitter authentication details have been saved') );
 			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user token: ' . $oauth_creds['oauth_token']);
 			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user secret: ' . $oauth_creds['oauth_token_secret']);
+			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user screen name: ' . $oauth_creds['screen_name']);
 		}
 	}
 	
