@@ -174,8 +174,11 @@ class TweetCopierSettings {
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => TweetCopier::TWITTER_USER_SECRET_OPTION, 'description' => 'Twitter user secret', 'label_for' => TweetCopier::TWITTER_USER_SECRET_OPTION ) );
 		add_settings_field( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, __( 'Authenticated Twitter user' , 'tweet_copier_textdomain' ) ,
-			array( &$this , 'render_field_twitterauth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_USER_SCREENNAME_OPTION, 'description' => 'Authenticated Twitter user' ) );
+			array( &$this , 'render_field_auth_screenname' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => TweetCopier::TWITTER_USER_SCREENNAME_OPTION, 'description' => 'The Twitter user that will be fetching tweets. Use the Authenticate button to change this.' ) );
+		add_settings_field( self::TWITTERAUTH_OPTION, '',
+			array( &$this , 'render_field_authenticate' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
+			array( 'fieldname' => self::TWITTERAUTH_OPTION, 'description' => 'Set the details of the Twitter user that will be fetching tweets' ) );
 
 		add_settings_field( TweetCopier::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_screenname' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
@@ -222,7 +225,18 @@ class TweetCopierSettings {
 				. __( 'Authentication details for fetching information from Twitter.' , 'tweet_copier_textdomain' )
 				. ' <a class="tweet_copier_auth_expander" href="#">' . __( 'details' , 'tweet_copier_textdomain' ) . '</a>'
 				. '</p>';
-		echo '<p class="settings-section-content">' . __( 'Detailed instructions.' , 'tweet_copier_textdomain' ) . '</p>';
+		echo '<div class="settings-section-content">';
+		echo '<p>To fetch tweets, you need to tell Twitter who you are and what application you will be using.<p>';
+		echo '<p>To tell Twitter that you\'re using Tweet Copier as your application:<p>
+			<ol>
+			<li>Go to <a href="https://dev.twitter.com/">Twitter Developers</a> and sign in using your normal Twitter login.
+			<li>Click your icon at the top right and select <em>My Applications</em>
+			<li>Click <em>Create a new application</em>
+			<li>For <em>Name</em>, type "Tweet Copier for" and your blog name, for example <tt>Tweet Copier for Spiderblog</tt>. Fill in other fields as appropriate and create the application.
+			<li>Your credentials are the the codes next to <em>Consumer key</em> and <em>Consumer secret</em>
+			</ol>';
+		echo '<p>To tell Twitter who will be fetching the tweets, use the <em>Authenticate</em> button below.<p>';
+		echo '</div>';
 	}
 
 	public function fetch_settings() { echo '<p>' . __( 'How to fetch tweets from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
@@ -246,7 +260,7 @@ class TweetCopierSettings {
 		echo "<span class='description'>$description</span>";
 	}
 
-	public function render_field_twitterauth( $args ) {
+	public function render_field_auth_screenname( $args ) {
 
 		$fieldname = $args['fieldname'];
 		$description = $args['description'];
@@ -254,8 +268,15 @@ class TweetCopierSettings {
 		$value = ( self::has_text($option) ? $option : '' );
 		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description' readonly='readonly'/>";
 		echo '<span class="description">' . $description . '</span>';
+	}
+
+	public function render_field_authenticate( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = $args['description'];
 		// submit_button( $text, $type, $name, $wrap, $other_attributes )
-		submit_button( __( 'Authenticate' , 'tweet_copier_textdomain' ), 'secondary', self::TWITTERAUTH_OPTION, false );
+		submit_button( __( 'Authenticate' , 'tweet_copier_textdomain' ), 'secondary', $fieldname, false );
+		echo '<span class="description">' . $description . '</span>';
 	}
 
 	public function render_field_screenname( $args ) {
