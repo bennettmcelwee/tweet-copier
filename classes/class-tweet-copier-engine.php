@@ -13,7 +13,6 @@ class TweetCopierEngine {
 
 /** How many tweets to fetch at once */
 const FETCH_COUNT = 50;
-const FETCH_COUNT_DEBUG = 5;
 
 /** Namespace prefix, used for hooks */
 private $namespace;
@@ -53,7 +52,7 @@ public function get_twitter_feed( $params ) {
 	));
 
 	$twitter_params = array(
-			'count' => $this->is_debug ? self::FETCH_COUNT_DEBUG : self::FETCH_COUNT,
+			'count' => self::FETCH_COUNT,
 			'screen_name' => $params['screen_name'],
 			'trim_user' => true,
 			);
