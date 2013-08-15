@@ -1,9 +1,9 @@
 === Tweet Copier ===
 Contributors: bennettmcelwee
 Donate link: http://thunderguy.com/semicolon/donate/
-Tags: twitter, tweet, import, copy
+Tags: twitter, tweet, import, copy, status
 Requires at least: 3.0
-Tested up to: 3.5.2
+Tested up to: 3.6
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -12,7 +12,7 @@ Tweet Copier copies tweets from your Twitter account to your blog, and keeps you
 
 == Description ==
 
-Tweet Copier keeps your WordPress blog synchronised with your Twitter account. It copies all old tweets into your blog, and continuously updates it with your new tweets. You can configure the schedule and various other aspects of the plugin.
+Tweet Copier keeps your WordPress blog synchronised with your Twitter account. It copies all old tweets into your blog, and continually updates it with your new tweets. You can configure the schedule and various other aspects of the plugin.
 
 == Installation ==
 
@@ -26,20 +26,15 @@ To install it manually from a zip file, just unzip the `tweet-copier.zip` file i
 
 First you'll need to obtain credentials from Twitter. This allows your Tweet Copier plugin to access Twitter.
 
-1. Go to [Twitter Developers](https://dev.twitter.com/) and sign in using your normal Twitter login.
-2. Click your icon at the top right and select *My Applications*
-3. Click *Create a new application*
-4. For *Name*, type `Tweet Mirror for` and your blog name, for example `Tweet Mirror for Spiderblog`. Fill in other fields as appropriate and create the application.
-5. On the application screen, click *Create my access token*
-6. Your credentials are the the codes next to *Consumer key*, *Consumer secret*, *Access token* and *Access token secret*
+1. Log in your WordPress dashboard, click *Settings* on the left and click *Tweet Copier*.
+2. Follow the instructions to register your Tweet Copier with Twitter and enter the information into the Tweet Copier settings screen.
+3. Click the *Authenticate* button to tell Twitter who will be fetching tweets.
 
 Now set up the Tweet Copier plugin.
 
-1. Log in your WordPress dashboard, click *Settings* on the left and click *Tweet Copier*.
-2. Enter the four credentials from the Twitter page.
-3. Enter the screen name of the Twitter account you want to copy. It can be yours or anybody else's.
-4. If you want, adjust the other settings.
-5. Click <em>Save Settings</em>.
+1. Enter the screen name of the Twitter account you want to copy. It can be yours or anybody else's.
+2. If you want, adjust the other settings.
+3. Click *Save Settings*.
 
 == Frequently Asked Questions ==
 
