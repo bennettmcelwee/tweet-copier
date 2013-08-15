@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 define( 'TWEET_COPIER_LOG', false );
 
 /** If true, write activity details to a log file. */
-define( 'TWEET_COPIER_DEBUG', true );
+define( 'TWEET_COPIER_DEBUG', false );
 
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
