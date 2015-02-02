@@ -229,13 +229,13 @@ class TweetCopierSettings {
 		echo '<p>To fetch tweets, you need to tell Twitter who you are and what application you will be using.<p>';
 		echo '<p>First, tell Twitter that you\'re using Tweet Copier as your application:<p>
 			<ol>
-			<li>Go to <a href="https://dev.twitter.com/">Twitter Developers</a> and sign in using your normal Twitter login.
-			<li>Click your icon at the top right and select <em>My Applications</em>
-			<li>Click <em>Create a new application</em>
-			<li>For <em>Name</em>, type "Tweet Copier for" and your blog name, for example <tt>Tweet Copier for Spiderblog</tt>.
-			<li>For <em>Website</em> and <em>Callback URL</em>, enter your blog address.
-			<li>Fill in other fields as appropriate and create the application.
-			<li>Your credentials are the the codes next to <em>Consumer key</em> and <em>Consumer secret</em>
+			<li>Go to <a href="https://apps.twitter.com/">Twitter Apps</a> and sign in using your Twitter login.
+			<li>Click <em>Create New App</em>
+			<li>For <em>Name</em> and <em>Description</em>, type "Tweet Copier for" and your blog name, for example <tt>Tweet Copier for Spiderblog</tt>.
+			<li>For <em>Website</em> and <em>Callback URL</em>, type your blog address.
+			<li>Check the checkbox under the Developer Agreement and create the application.
+			<li>When the next screen appears, look for the Consumer Key and click <em>manage keys and access tokens</em>.
+			<li>Copy the codes next to <em>Consumer Key</em> and <em>Consumer Secret</em> and paste them below.
 			</ol>';
 		echo '<p>Then, tell Twitter who will be fetching the tweets. Use the <em>Authenticate</em> button below.<p>';
 		echo '</div>';
