@@ -68,7 +68,7 @@ if ( TWEET_COPIER_LOG || TWEET_COPIER_DEBUG ) {
 		@error_log( $message, 3, TWEET_COPIER_LOG_FILE );
 	}
 } else {
-	function twcp_log( $level, $message ) {
+	function twcp_log() {
 	}
 }
 
