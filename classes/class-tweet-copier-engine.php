@@ -124,7 +124,8 @@ public function save_tweets($tweet_list, $params) {
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_author' => $params['author'],
 						  'post_category' => array($params['category']),
-						  'post_status' => 'publish');
+						  'post_status' => 'publish',
+						  'comment_status' => 'closed');
 		$new_post = apply_filters($this->namespace . '_new_post_before_create', $new_post); // Offer the chance to manipulate new post data. return false to skip
 		if ( ! $new_post ) {
 			continue;
