@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2013 Bennett McElwee. Licensed under the GPL (v2 or later).
+ * Copyright (c) 2013-15 Bennett McElwee. Licensed under the GPL (v2 or later).
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -25,6 +25,9 @@ public function __construct( $namespace ) {
 
 	// Default actions and filters
 	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'stop_duplicates' ) );
+	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'screen_names_to_html' ) );
+	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'hashtags_to_html' ) );
+	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'urls_to_html' ) );
 }
 
 public function set_debug( $is_debug ) {
@@ -102,21 +105,14 @@ public function save_tweets($tweet_list, $params) {
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
-		if (!$tweet) {
+		if ( ! $tweet) {
 			continue;
 		}
-		$processed_text = $tweet->text;
+		$processed_text = apply_filters ($this->namespace . '_text_before_new_post', $tweet->text);
 
-		// Hyperlink screen names
-		$processed_text = preg_replace("~@(\w+)~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>", $processed_text);
-		$processed_text = preg_replace("~^(\w+):~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>:", $processed_text);
-
-		// Hyperlink hashtags
-		$processed_text = preg_replace("/#(\w+)/", "<a href=\"https://twitter.com/search?q=%23\\1&amp;src=hash\" target=\"_blank\">#\\1</a>", $processed_text);
-
-		// Hyperlink URLs
-		$processed_text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2</a>", $processed_text);
-		$processed_text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $processed_text);
+		if (isset($tweet->entities->media[0]->media_url)) {
+			$processed_text .= ' <br /><img alt="" src="' . $tweet->entities->media[0]->media_url . '" />';
+		}
 
 		$new_post = array('post_title' => $this->format_title( $tweet, $params['title_format'] ),
 						  'post_content' => trim( $processed_text ),
@@ -134,12 +130,81 @@ public function save_tweets($tweet_list, $params) {
 		set_post_format( $new_post_id, 'status' );
 		add_post_meta( $new_post_id, 'tweetcopier_twitter_id', $tweet->id_str, true);
 		add_post_meta( $new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
+		add_post_meta( $new_post_id, 'tweetcopier_original_text', $tweet->text, true); 
 		add_post_meta( $new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
 		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 		++$count;
 	}
 	return compact( 'count' );
+}
+
+function screen_names_to_html( $text )
+{
+	$text = preg_replace("~@(\w+)~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>", $text);
+	$text = preg_replace("~^(\w+):~", "<a href=\"https://twitter.com/\\1\" target=\"_blank\">@\\1</a>:", $text);
+	return $text;
+}
+
+function hashtags_to_html( $text )
+{
+	$text = preg_replace("/#(\w+)/", "<a href=\"https://twitter.com/search?q=%23\\1&amp;src=hash\" target=\"_blank\">#\\1</a>", $text);
+	return $text;
+}
+
+function urls_to_html( $text )
+{
+	// Replace all URLs with HTML
+	$self = $this;
+	$text = preg_replace_callback("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", function($matches) use (&$self) {
+		return ' ' . $self->url_to_html($matches[2]);
+	}, $text);
+	// Try to replace things that *look* like URLs with HTML
+	$text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2</a>", $text);
+	return $text;
+}
+
+/**
+ * Resolve a (possibly shortened) URL and render it appropriately into HTML.
+ * This is public so it can be called from a closure. There must be a better way.
+ */
+public function url_to_html( $url )
+{
+	$host = parse_url($url, PHP_URL_HOST);
+	$guard = 5;
+	while (--$guard > 0) {
+		if ( $this->is_debug ) twcp_debug( "url_to_html: Checking $url" );
+		$result = wp_remote_head($url, array('redirection' => 0));
+		//print_r($result);
+		if (isset($result['response']['code'])) {
+			$code = $result['response']['code'];
+			if ( $this->is_debug ) twcp_debug( "url_to_html: Code = $code" );
+			if (300 <= $code && $code < 400 && isset($result['headers']['location'])) {
+				$redirected_url = $result['headers']['location'];
+				$redirected_host = parse_url($redirected_url, PHP_URL_HOST);
+				if ($redirected_host !== $host) {
+					$url = $redirected_url;
+					$host = $redirected_host;
+					if ( $this->is_debug ) twcp_debug( "url_to_html: Redirecting to $url" );
+					continue;
+				}
+			}
+		}
+		break;
+	}
+	if ( $this->is_debug ) twcp_debug( "url_to_html: Resolved to $url" );
+
+	if (isset($result['headers']['content-type'])
+			&& 0 === strncmp($result['headers']['content-type'], 'image/', strlen('image/'))) {
+		return '<img alt="" src="' . $url . '" />';
+	} else {
+		$parsed = parse_url($url);
+		$display = $parsed['host'] . $parsed['path'];
+		if (50 < mb_strlen($display)) {
+			$display = mb_substr($display, 0, 50) . '&hellip;';
+		}
+		return '<a href="' . $url . '" target="_blank">' . $display . '</a>';
+	}
 }
 
 function stop_duplicates( $tweet )
