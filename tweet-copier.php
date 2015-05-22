@@ -1,13 +1,11 @@
 <?php
 /*
  * Plugin Name: Tweet Copier
- * Version: 0.1
+ * Version: 1.0
  * Plugin URI: http://thunderguy.com/semicolon
- * Description: Im in ur Wordprez. Copyng ur tweetz.
+ * Description: Tweet Copier keeps your blog updated with copies of all your tweets, old and new.
  * Author: Bennett McElwee
  * Author URI: http://thunderguy.com/
- * Requires at least: 3.1
- * Tested up to: 3.6
  * Licence: GPLv2 or later
  * 
  * @package Tweet Copier
@@ -15,7 +13,7 @@
  * @since 1.0.0
  */
 /*
-Copyright (C) 2013 Bennett McElwee. This software may contain code licensed
+Copyright (C) 2013-15 Bennett McElwee. This software may contain code licensed
 from WordPress Plugin Template by Hugh Lashbrooke, Tweet Import by Khaled
 Afiouni, Twitter Importer by DsgnWrks, tmhOAuth by Matt Harris, and others.
 It takes a village.
@@ -37,11 +35,14 @@ or by writing to the Free Software Foundation, Inc.,
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/** This must be set to some random alphabetic string in order for logging to work. It's a poor man's security feature. */
+define( 'TWEET_COPIER_LOGFILE_SUFFIX', '' );
+
 /** If true, write activity summaries to a log file. */
-define( 'TWEET_COPIER_LOG', false );
+define( 'TWEET_COPIER_LOG', false && TWEET_COPIER_LOGFILE_SUFFIX);
 
 /** If true, write activity details to a log file. */
-define( 'TWEET_COPIER_DEBUG', false );
+define( 'TWEET_COPIER_DEBUG', false && TWEET_COPIER_LOGFILE_SUFFIX);
 
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
@@ -60,7 +61,7 @@ call_user_func( function() {
 
 // Logging
 if ( TWEET_COPIER_LOG || TWEET_COPIER_DEBUG ) {
-	define( 'TWEET_COPIER_LOG_FILE', dirname( __FILE__ ) . '/tweet-copier.log' );
+	define( 'TWEET_COPIER_LOG_FILE', dirname( __FILE__ ) . '/tweet-copier-' . TWEET_COPIER_LOGFILE_SUFFIX . '.log' );
 	function twcp_log( $message, $level = 'INFO' ) {
 		$message = rtrim( $message );
 		$message = str_replace( "\n", "\n                    " . $level . ' ', $message );
@@ -73,8 +74,6 @@ if ( TWEET_COPIER_LOG || TWEET_COPIER_DEBUG ) {
 }
 
 /** Usage: if ( TWEET_COPIER_DEBUG ) twcp_debug( 'My message' ); */
-if ( TWEET_COPIER_DEBUG ) {
-	function twcp_debug( $message ) {
-		twcp_log( $message, 'DEBUG' );
-	}
+function twcp_debug( $message ) {
+	twcp_log( $message, 'DEBUG' );
 }

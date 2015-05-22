@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2013 Bennett McElwee. Licensed under the GPL (v2 or later).
+ * Copyright (c) 2013-15 Bennett McElwee. Licensed under the GPL (v2 or later).
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;

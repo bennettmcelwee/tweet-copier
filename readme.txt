@@ -18,7 +18,7 @@ Tweet Copier keeps your WordPress blog synchronised with your Twitter account. I
 
 = Install the plugin =
 
-Log in your WordPress dashboard, go to the Plugins screen and search for *Tweet Copier*. When it appears, click *Install Now*, then *Activate*.
+Log in your WordPress dashboard, go to the Plugins screen and click *Add New*. Search for *Tweet Copier*. When it appears, click *Install Now*, then *Activate*.
 
 To install it manually from a zip file, just unzip the `tweet-copier.zip` file into the `/wp-content/plugins/` directory. Then log in your WordPress dashboard, go to the Plugins screen and click *Activate* in the *Tweet Copier* section.
 
