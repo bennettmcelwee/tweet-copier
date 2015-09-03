@@ -656,8 +656,10 @@ class TweetCopierSettings {
 		$params = array();
 		if ( isset( $url['query'] )) {
 			foreach (explode('&', $url['query']) as $p) {
-				list($k, $v) = explode('=', $p);
-				$params[$k] =$v;
+				list($k, $v) = explode('=', $p) + array('', ''); // allow for a=1&b&c=3
+				if (strlen($k)) { // allow for a=1&&b=2
+					$params[$k] =$v;
+				}
 			}
 		}
 		return $params;
