@@ -614,7 +614,7 @@ class TweetCopierSettings {
 		}
 
 		if (!isset($params['oauth_verifier'])) {
-			$this->plugin->checkpoint( 'error', __('Twitter authentication oauth verifier missing. Did you deny the appliction access?'));
+			$this->plugin->checkpoint( 'error', __('Twitter authentication oauth verifier missing. Did you deny the application access?'));
 			return;
 		}
 
