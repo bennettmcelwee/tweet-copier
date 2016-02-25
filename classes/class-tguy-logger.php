@@ -7,8 +7,6 @@ namespace Thunderguy {
 /**
  * @package Thunderguy
  * @author Bennett McElwee
- *
- * NOT YET IN USE
  */
 class Logger {
 
@@ -19,22 +17,37 @@ class Logger {
 	}
 
 	function info() {
-		log( func_get_args(), 'INFO' );
+		$this->log( func_get_args(), 'INFO' );
 	}
 
 	function warn() {
-		log( func_get_args(), 'WARN' );
+		$this->log( func_get_args(), 'WARN' );
 	}
 
 	function debug() {
-		log( func_get_args(), 'DEBUG' );
+		$this->log( func_get_args(), 'DEBUG' );
+	}
+
+	// Same as debug(), but append a stack trace
+	function stack() {
+		$frames = debug_backtrace();
+		array_shift( $frames ); // remove the stack() function call
+		$stack = array_map(function($frame) {
+					return "\n- ".$frame['function'].
+						(array_key_exists('file', $frame)
+							? '() ('.basename($frame['file']).':'.$frame['line'].')'
+							: '');
+				},
+				$frames
+			);
+		$this->log( array_merge( func_get_args(), $stack), 'DEBUG' );
 	}
 
 	private function log( $arguments, $level ) {
 		$message = rtrim( implode( $arguments ) );
 		$message = str_replace( "\n", "\n                    " . $level . ' ', $message );
 		$message = current_time( 'mysql' ) . ' ' . $level . ' ' . $message . "\n";
-		@error_log( $message, 3, LOG_FILE_PATH );
+		@error_log( $message, 3, $this->log_file_path );
 	}
 }
 
