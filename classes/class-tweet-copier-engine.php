@@ -12,27 +12,30 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class TweetCopierEngine {
 
 /** How many tweets to fetch at once */
-const FETCH_COUNT = 50;
+const FETCH_COUNT = 5;
 
 /** Namespace prefix, used for hooks */
 private $namespace;
 
-/** Debug? */
-private $is_debug = false;
+private $log;
 
-public function __construct( $namespace ) {
+public function __construct( $namespace, $log ) {
 	$this->namespace = $namespace;
+	$this->log = $log;
 
 	// Default actions and filters
+	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'log_tweet' ) );
 	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'stop_duplicates' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'screen_names_to_html' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'hashtags_to_html' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'urls_to_html' ) );
 }
 
-public function set_debug( $is_debug ) {
-	$this->is_debug = $is_debug;
+function log_tweet( $tweet ) {
+
+    return $tweet;
 }
+
 
 /**
 $params is an array:
@@ -45,7 +48,7 @@ returns an array
 */
 public function get_twitter_feed( $params ) {
 
-	if ( $this->is_debug ) twcp_debug( 'Fetch: About to fetch tweets via Twitter API' );
+	if ( $this->log->is_debug() ) $this->log->debug( 'Fetch: About to fetch tweets via Twitter API' );
 
 	$twitter_api = new tmhOAuth(array(
 		'consumer_key'    => get_option( TweetCopier::TWITTER_CONSUMER_KEY_OPTION ),
@@ -68,13 +71,13 @@ public function get_twitter_feed( $params ) {
 		// so to make up for that we fetch one extra.
 		++$twitter_params['count'];
 	}
-	if ( $this->is_debug ) twcp_debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
+	if ( $this->log->is_debug() ) $this->log->debug( 'Fetch: Twitter request: ' . print_r( $twitter_params, true ) );
 	$twitter_api->request( 'GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', $twitter_params );
 
 	if ( $twitter_api->response['code'] === 200 ) {
 		$body = $twitter_api->response['response'];
 		$tweet_list = json_decode( $body );
-		if ( $this->is_debug ) twcp_debug( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
+		if ( $this->log->is_debug() ) $this->log->debug( 'Fetched ' . count( $tweet_list ) . ' tweets from Twitter for @' . $params['screen_name'] );
 		return array(
 			'tweets' => $tweet_list,
 			'error' => null,
@@ -101,7 +104,7 @@ returns an array
 */
 public function save_tweets($tweet_list, $params) {
 
-	if ( $this->is_debug ) twcp_debug( 'Save: About to save tweets. count ' . count( $tweet_list ));
+	if ( $this->log->is_debug() ) $this->log->debug( 'Save: About to save tweets. count ' . count( $tweet_list ));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
@@ -133,7 +136,7 @@ public function save_tweets($tweet_list, $params) {
 		add_post_meta( $new_post_id, 'tweetcopier_original_text', $tweet->text, true); 
 		add_post_meta( $new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( $this->is_debug ) twcp_debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
+		if ( $this->log->is_debug() ) $this->log->debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 		++$count;
 	}
 	return compact( 'count' );
@@ -173,26 +176,26 @@ public function url_to_html( $url )
 	$host = parse_url($url, PHP_URL_HOST);
 	$guard = 5;
 	while (--$guard > 0) {
-		if ( $this->is_debug ) twcp_debug( "url_to_html: Checking $url" );
+		if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Checking $url" );
 		$result = wp_remote_head($url, array('redirection' => 0));
 		//print_r($result);
 		if (isset($result['response']['code'])) {
 			$code = $result['response']['code'];
-			if ( $this->is_debug ) twcp_debug( "url_to_html: Code = $code" );
+			if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Code = $code" );
 			if (300 <= $code && $code < 400 && isset($result['headers']['location'])) {
 				$redirected_url = $result['headers']['location'];
 				$redirected_host = parse_url($redirected_url, PHP_URL_HOST);
 				if ($redirected_host !== $host) {
 					$url = $redirected_url;
 					$host = $redirected_host;
-					if ( $this->is_debug ) twcp_debug( "url_to_html: Redirecting to $url" );
+					if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Redirecting to $url" );
 					continue;
 				}
 			}
 		}
 		break;
 	}
-	if ( $this->is_debug ) twcp_debug( "url_to_html: Resolved to $url" );
+	if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Resolved to $url" );
 
 	if (isset($result['headers']['content-type'])
 			&& 0 === strncmp($result['headers']['content-type'], 'image/', strlen('image/'))) {
@@ -214,7 +217,7 @@ function stop_duplicates( $tweet )
 		'meta_value' => $tweet->id_str,
 	));
 	if ( $query->have_posts() ) {
-		if ( $this->is_debug ) twcp_debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
+		if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 		return false;
 	} else {
 		return $tweet;

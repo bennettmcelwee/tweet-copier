@@ -30,12 +30,15 @@ class TweetCopierSettings {
 	private $assets_dir;
 	private $assets_url;
 
-	public function __construct( $file, &$plugin ) {
+	private $log;
+
+	public function __construct( $file, &$plugin, $log ) {
 		$this->plugin = $plugin;
 		$this->dir = dirname( $file );
 		$this->file = $file;
 		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
 		$this->assets_url = esc_url( trailingslashit( plugins_url( '/assets/', $file ) ) );
+		$this->log = $log;
 
 		// Check whether we need to redirect for Twitter auth (high priority)
 		add_action( 'init', array( &$this , 'check_for_twitter_response' ), 0 );
@@ -605,7 +608,7 @@ class TweetCopierSettings {
 	}
 
 	private function twitter_access_token($params) {
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'twitter_access_token');
+		$this->log->debug( 'twitter_access_token');
 		$oauth = get_transient( 'tweet-copy-oauth-' . get_current_user_id() );
 
 		if ($params['oauth_token'] !== $oauth['oauth_token']) {
@@ -628,7 +631,7 @@ class TweetCopierSettings {
 			'secret' => $oauth['oauth_token_secret'],
 		)));
 
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'twitter_access_token requesting permanent token');
+		$this->log->debug( 'twitter_access_token requesting permanent token');
 		// Request the permanent token
 		$code = $twitter_api->user_request(array(
 			'method' => 'POST',
@@ -638,16 +641,18 @@ class TweetCopierSettings {
 			)
 		));
 
-		if ( TWEET_COPIER_DEBUG ) twcp_debug( 'twitter_access_token result ' . $code);
+		if ( $this->log->is_debug() ) $this->log->debug( 'twitter_access_token result ' . $code);
 		if ( $code == 200 ) {
 			$oauth_creds = $twitter_api->extract_params($twitter_api->response['response']);
 			update_option( TweetCopier::TWITTER_USER_TOKEN_OPTION, $oauth_creds['oauth_token'] );
 			update_option( TweetCopier::TWITTER_USER_SECRET_OPTION, $oauth_creds['oauth_token_secret'] );
 			update_option( TweetCopier::TWITTER_USER_SCREENNAME_OPTION, $oauth_creds['screen_name'] );
 			$this->plugin->checkpoint( 'info', __('Twitter authentication details have been saved') );
-			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user token: ' . $oauth_creds['oauth_token']);
-			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user secret: ' . $oauth_creds['oauth_token_secret']);
-			if ( TWEET_COPIER_DEBUG ) twcp_debug( 'user screen name: ' . $oauth_creds['screen_name']);
+			if ( $this->log->is_debug() ) {
+				$this->log->debug( 'user token: ' . $oauth_creds['oauth_token']);
+				$this->log->debug( 'user secret: ' . $oauth_creds['oauth_token_secret']);
+				$this->log->debug( 'user screen name: ' . $oauth_creds['screen_name']);
+			}
 		}
 	}
 	

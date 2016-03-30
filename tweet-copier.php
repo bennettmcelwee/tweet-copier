@@ -36,44 +36,37 @@ or by writing to the Free Software Foundation, Inc.,
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /** This must be set to some random alphabetic string in order for logging to work. It's a poor man's security feature. */
-define( 'TWEET_COPIER_LOGFILE_SUFFIX', '' );
+define( 'TWEET_COPIER_LOGFILE_SUFFIX', 'oijskdjf' );
 
 /** If true, write activity summaries to a log file. */
-define( 'TWEET_COPIER_LOG', false && TWEET_COPIER_LOGFILE_SUFFIX);
+define( 'TWEET_COPIER_LOG', true && TWEET_COPIER_LOGFILE_SUFFIX);
 
 /** If true, write activity details to a log file. */
-define( 'TWEET_COPIER_DEBUG', false && TWEET_COPIER_LOGFILE_SUFFIX);
+define( 'TWEET_COPIER_DEBUG', true && TWEET_COPIER_LOGFILE_SUFFIX);
 
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
 require_once 'classes/class-tweet-copier.php';
 require_once 'classes/class-tweet-copier-engine.php';
+require_once 'classes/class-tweet-copier-logger.php';
 
 // Instantiate necessary classes (use call_user_func to avoid global namespace)
 call_user_func( function() {
-	$plugin = new TweetCopier( __FILE__ );
-	$plugin->set_debug( TWEET_COPIER_DEBUG );
+	$logfile = dirname( __FILE__ ) . '/tweet-copier-test-' . TWEET_COPIER_LOGFILE_SUFFIX . '.log';
+	$log = new TweetCopier\Logger($logfile);
+	if (TWEET_COPIER_DEBUG) {
+		$log->enable(Logger::DEBUG);
+	} else if (TWEET_COPIER_LOG) {
+		$log->enable(Logger::INFO);
+	} else {
+		$log = new TweetCopier\NullLogger();
+	}
+	$log->info('For your information');
+	$log->debug('Debugg\'rit');
+
+	$plugin = new TweetCopier( __FILE__, $log );
 	if ( is_admin() ) {
 		require_once 'classes/class-tweet-copier-settings.php';
-		$plugin_settings = new TweetCopierSettings( __FILE__, $plugin );
+		$plugin_settings = new TweetCopierSettings( __FILE__, $plugin, $log );
 	}
 });
-
-// Logging
-if ( TWEET_COPIER_LOG || TWEET_COPIER_DEBUG ) {
-	define( 'TWEET_COPIER_LOG_FILE', dirname( __FILE__ ) . '/tweet-copier-' . TWEET_COPIER_LOGFILE_SUFFIX . '.log' );
-	function twcp_log( $message, $level = 'INFO' ) {
-		$message = rtrim( $message );
-		$message = str_replace( "\n", "\n                    " . $level . ' ', $message );
-		$message = current_time( 'mysql' ) . ' ' . $level . ' ' . $message . "\n";
-		@error_log( $message, 3, TWEET_COPIER_LOG_FILE );
-	}
-} else {
-	function twcp_log() {
-	}
-}
-
-/** Usage: if ( TWEET_COPIER_DEBUG ) twcp_debug( 'My message' ); */
-function twcp_debug( $message ) {
-	twcp_log( $message, 'DEBUG' );
-}

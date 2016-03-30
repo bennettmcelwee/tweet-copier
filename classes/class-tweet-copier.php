@@ -34,15 +34,14 @@ class TweetCopier {
 	private $file;
 	private $assets_dir;
 	private $assets_url;
+	private $log;
 
-	/** Debug? */
-	private $is_debug = false;
-
-	public function __construct( $file ) {
+	public function __construct( $file, $log ) {
 		$this->dir = dirname( $file );
 		$this->file = $file;
 		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
 		$this->assets_url = esc_url( trailingslashit( plugins_url( '/assets/', $file ) ) );
+        	$this->log = $log;
 
 		// Lifecycle
 		register_deactivation_hook( $this->file, array( &$this, 'deactivate' ) );
@@ -53,10 +52,6 @@ class TweetCopier {
 
 		// Handle schedule
 		add_action( self::SCHEDULE_HOOK, array( &$this, 'copy_tweets' ) );
-	}
-	
-	public function set_debug( $is_debug ) {
-		$this->is_debug = $is_debug;
 	}
 
 	public function load_localisation () {
@@ -81,12 +76,11 @@ class TweetCopier {
 		$screen_name = get_option( self::SCREENNAME_OPTION );
 		if ( $screen_name == '' ) {
 			$this->checkpoint( 'error', __('Tweet Copier settings have not yet been saved') );
-			twcp_log( 'Copy failed: settings have not yet been saved' );
+			$this->log->warn( 'Copy failed: settings have not yet been saved' );
 			return;
 		}
 
-		$engine = new TweetCopierEngine( 'tweet_copier' );
-		$engine->set_debug( $this->is_debug );
+		$engine = new TweetCopierEngine( 'tweet_copier', $this->log );
 
 		$twitter_params = array(
 			'screen_name' => $screen_name,
@@ -99,7 +93,7 @@ class TweetCopier {
 		$twitter_result = $engine->get_twitter_feed( $twitter_params );
 		if ( isset( $twitter_result['error'] )) {
 			$this->checkpoint( 'error', 'Fetching new tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
-			twcp_log( 'Copy failed: error fetching new tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
+			$this->log->warn( 'Copy failed: error fetching new tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
 		} else if ( 0 < count( $twitter_result['tweets'] ) ) {
 			$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 				'screen_name' => $screen_name,
@@ -109,11 +103,11 @@ class TweetCopier {
 			));
 			$message = 'Copied ' . $save_result['count'] . ' new tweets from @' . $screen_name;
 			$this->checkpoint( $save_result['count'] === 0 ? 'empty' : 'copy', $message );
-			twcp_log( $message );
+			$this->log->info( $message );
 		} else {
 			$message = 'No new tweets from @' . $screen_name;
 			$this->checkpoint( 'empty', $message );
-			twcp_log( $message );
+			$this->log->info( $message );
 		}
 		
 		if ( get_option( self::HISTORY_OPTION )) {
@@ -128,7 +122,7 @@ class TweetCopier {
 				$twitter_result = $engine->get_twitter_feed( $twitter_params );
 				if ( isset( $twitter_result['error'] )) {
 					$this->checkpoint( 'error', 'Fetching old tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
-					twcp_log( 'Copy failed: error fetching old tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
+					$this->log->warn( 'Copy failed: error fetching old tweets from @' . $screen_name . ': ' . $twitter_result['error'] );
 				} else if ( 0 < count( $twitter_result['tweets'] ) ) {
 					if ( count( $twitter_result['tweets'] ) === 1 ) {
 						// We only got one tweet, so no history is left
@@ -136,7 +130,7 @@ class TweetCopier {
 						update_option( self::HISTORY_COMPLETE_OPTION, true );
 						$message = 'No more old tweets to copy from @' . $screen_name;
 						$this->checkpoint( 'empty', $message );
-						twcp_log( $message );
+						$this->log->info( $message );
 					} else {
 						$save_result = $engine->save_tweets( $twitter_result['tweets'], array(
 							'screen_name' => $screen_name,
@@ -146,7 +140,7 @@ class TweetCopier {
 						));
 						$message = 'Copied ' . $save_result['count'] . ' old tweets from @' . $screen_name;
 						$this->checkpoint( $save_result['count'] === 0 ? 'empty' : 'copy', $message );
-						twcp_log( $message );
+						$this->log->info( $message );
 					}
 				}
 			}
@@ -169,7 +163,7 @@ class TweetCopier {
 			$post = $query->next_post();
 			$id = get_metadata( 'post', $post->ID, 'tweetcopier_twitter_id', true );
 		}
-		if ( $this->is_debug ) twcp_debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
+		if ( $this->log->is_debug() ) $this->log->debug( 'Tweet limit: Retrieved limit: ' . $newest_or_oldest . ' = ' . $id );
 		return $id;
 	}
 
