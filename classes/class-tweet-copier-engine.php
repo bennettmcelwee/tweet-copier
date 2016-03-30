@@ -24,16 +24,17 @@ public function __construct( $namespace, $log ) {
 	$this->log = $log;
 
 	// Default actions and filters
-	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'log_tweet' ) );
-	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'stop_duplicates' ) );
+	//add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'log_tweet' ) );
+	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'skip_duplicate' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'screen_names_to_html' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'hashtags_to_html' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'urls_to_html' ) );
 }
 
-function log_tweet( $tweet ) {
-
-    return $tweet;
+function log_tweet( $tweet )
+{
+	$this->log->info(print_r($tweet, true));
+	return $tweet;
 }
 
 
@@ -210,18 +211,19 @@ public function url_to_html( $url )
 	}
 }
 
-function stop_duplicates( $tweet )
+function skip_duplicate( $tweet )
 {
-	$query = new WP_Query( array(
-		'meta_key' => 'tweetcopier_twitter_id',
-		'meta_value' => $tweet->id_str,
-	));
-	if ( $query->have_posts() ) {
-		if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
-		return false;
-	} else {
-		return $tweet;
+	if ($tweet) {
+		$query = new WP_Query( array(
+			'meta_key' => 'tweetcopier_twitter_id',
+			'meta_value' => $tweet->id_str,
+		));
+		if ( $query->have_posts() ) {
+			if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
+			return false;
+		}
 	}
+	return $tweet;
 }
 
 function format_title( $tweet, $format ) {

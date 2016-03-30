@@ -49,17 +49,19 @@ require_once 'lib/tmhOAuth.php';
 require_once 'classes/class-tweet-copier.php';
 require_once 'classes/class-tweet-copier-engine.php';
 require_once 'classes/class-tweet-copier-logger.php';
+use TweetCopier\Logger as Logger;
+use TweetCopier\NullLogger as NullLogger;
 
 // Instantiate necessary classes (use call_user_func to avoid global namespace)
 call_user_func( function() {
 	$logfile = dirname( __FILE__ ) . '/tweet-copier-test-' . TWEET_COPIER_LOGFILE_SUFFIX . '.log';
-	$log = new TweetCopier\Logger($logfile);
+	$log = new Logger($logfile);
 	if (TWEET_COPIER_DEBUG) {
 		$log->enable(Logger::DEBUG);
 	} else if (TWEET_COPIER_LOG) {
 		$log->enable(Logger::INFO);
 	} else {
-		$log = new TweetCopier\NullLogger();
+		$log = new NullLogger();
 	}
 	$log->info('For your information');
 	$log->debug('Debugg\'rit');
