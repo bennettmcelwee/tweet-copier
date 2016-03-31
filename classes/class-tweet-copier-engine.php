@@ -62,6 +62,7 @@ public function get_twitter_feed( $params ) {
 			'count' => self::FETCH_COUNT,
 			'screen_name' => $params['screen_name'],
 			'trim_user' => true,
+			'exclude_replies' => true,
 			);
 	if (isset( $params['since_id'] )) {
 		$twitter_params['since_id'] = $params['since_id'];
