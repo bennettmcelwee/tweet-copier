@@ -35,15 +35,6 @@ or by writing to the Free Software Foundation, Inc.,
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-/** This must be set to some random alphabetic string in order for logging to work. It's a poor man's security feature. */
-define( 'TWEET_COPIER_LOGFILE_SUFFIX', 'oijskdjf' );
-
-/** If true, write activity summaries to a log file. */
-define( 'TWEET_COPIER_LOG', true && TWEET_COPIER_LOGFILE_SUFFIX);
-
-/** If true, write activity details to a log file. */
-define( 'TWEET_COPIER_DEBUG', true && TWEET_COPIER_LOGFILE_SUFFIX);
-
 // Include plugin libraries and class files
 require_once 'lib/tmhOAuth.php';
 require_once 'classes/class-tweet-copier.php';
@@ -54,12 +45,18 @@ use TweetCopier\NullLogger as NullLogger;
 
 // Instantiate necessary classes (use call_user_func to avoid global namespace)
 call_user_func( function() {
-	$logfile = dirname( __FILE__ ) . '/tweet-copier-test-' . TWEET_COPIER_LOGFILE_SUFFIX . '.log';
-	$log = new Logger($logfile);
-	if (TWEET_COPIER_DEBUG) {
-		$log->enable(Logger::DEBUG);
-	} else if (TWEET_COPIER_LOG) {
-		$log->enable(Logger::INFO);
+
+	$logfile_suffix = '';
+	$log_level = null;
+	// Load optional local configuration
+	if (file_exists(__DIR__ . '/tweet-copier-config.php')) {
+		@include __DIR__ . '/tweet-copier-config.php';
+	}
+
+	if ($log_level && $logfile_suffix) {
+		$logfile = __DIR__ . '/tweet-copier-' . $logfile_suffix . '.log';
+		$log = new Logger($logfile);
+		$log->enable($log_level);
 	} else {
 		$log = new NullLogger();
 	}

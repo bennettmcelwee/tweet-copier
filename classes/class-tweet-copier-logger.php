@@ -24,6 +24,16 @@ class Logger {
 	}
 
 	function enable($level = Logger::DEBUG) {
+		// If level is a string, convert to a number
+		if (!is_numeric($level)) {
+			switch ($level) {
+				case 'error': $level = Logger::ERROR; break;
+				case 'warn':  $level = Logger::WARN;  break;
+				case 'info':  $level = Logger::INFO;  break;
+				case 'debug': $level = Logger::DEBUG; break;
+				default: $level = Logger::OFF;
+			}
+		}
 		$this->level = $level;
 	}
 	function disable() {

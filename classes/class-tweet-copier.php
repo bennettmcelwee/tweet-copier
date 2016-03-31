@@ -41,7 +41,7 @@ class TweetCopier {
 		$this->file = $file;
 		$this->assets_dir = trailingslashit( $this->dir ) . 'assets';
 		$this->assets_url = esc_url( trailingslashit( plugins_url( '/assets/', $file ) ) );
-        	$this->log = $log;
+		$this->log = $log;
 
 		// Lifecycle
 		register_deactivation_hook( $this->file, array( &$this, 'deactivate' ) );
