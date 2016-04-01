@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class TweetCopierEngine {
 
 /** How many tweets to fetch at once */
-const FETCH_COUNT = 5;
+const FETCH_COUNT = 50;
 
 /** Namespace prefix, used for hooks */
 private $namespace;
@@ -31,11 +31,11 @@ public function __construct( $namespace, $log ) {
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'urls_to_html' ) );
 }
 
-function log_tweet( $tweet )
-{
-	$this->log->info(print_r($tweet, true));
-	return $tweet;
-}
+// function log_tweet( $tweet )
+// {
+// 	$this->log->info(print_r($tweet, true));
+// 	return $tweet;
+// }
 
 
 /**

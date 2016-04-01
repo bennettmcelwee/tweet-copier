@@ -3,7 +3,7 @@ Contributors: bennettmcelwee
 Donate link: http://thunderguy.com/semicolon/donate/
 Tags: twitter, tweet, import, copy, status
 Requires at least: 4.0
-Tested up to: 4.2
+Tested up to: 4.4
 Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -56,13 +56,21 @@ you want to copy. Tweet Copier will do the rest.
 
 == Changelog ==
 
+= 1.1 =
+* Don't fetch replies
+* (For developers) Configurable logging
+* Stability improvements
+
 = 1.0 =
 * First released version.
 
 == Upgrade Notice ==
 
+= 1.1 =
+Don't copy replies (tweets that start with @). Also fixed a potential error in the settings screen.
+
 = 1.0 =
-* Fully functional.
+It works!
 
 == Advanced ==
 
