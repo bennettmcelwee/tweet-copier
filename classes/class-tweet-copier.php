@@ -20,6 +20,7 @@ class TweetCopier {
 	const TWITTER_USER_SCREENNAME_OPTION = 'tweet_copier_user_screenname';
 
 	const SCREENNAME_OPTION = 'tweet_copier_screenname';
+	const FILTER_WORDS_OPTION = 'tweet_copier_filter_words';
 	const TITLE_FORMAT_OPTION = 'tweet_copier_title_format';
 	const AUTHOR_OPTION = 'tweet_copier_author';
 	const CATEGORY_OPTION = 'tweet_copier_category';

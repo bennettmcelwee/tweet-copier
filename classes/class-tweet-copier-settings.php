@@ -186,6 +186,9 @@ class TweetCopierSettings {
 		add_settings_field( TweetCopier::SCREENNAME_OPTION, __( 'Screen name:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_screenname' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
 			array( 'fieldname' => TweetCopier::SCREENNAME_OPTION, 'description' => 'Screen name of Twitter account to copy', 'label_for' => TweetCopier::SCREENNAME_OPTION ) );
+		add_settings_field( TweetCopier::FILTER_WORDS_OPTION, __( 'Filter words:' , 'tweet_copier_textdomain' ) ,
+			array( &$this , 'render_field_filter_words' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
+			array( 'fieldname' => TweetCopier::FILTER_WORDS_OPTION, 'description' => 'Ignore tweets containing any of these words', 'label_for' => TweetCopier::FILTER_WORDS_OPTION ) );
 		add_settings_field( TweetCopier::HISTORY_OPTION, __( 'Copy past tweets?' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_history' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
 			array( 'fieldname' => TweetCopier::HISTORY_OPTION, 'description' => 'Copy all older tweets as well as new ones?' ) );
@@ -215,6 +218,7 @@ class TweetCopierSettings {
 		// no updating register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TWITTER_USER_SCREENNAME_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , self::TWITTERAUTH_OPTION );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::SCREENNAME_OPTION , array( &$this , 'sanitize_slug' ) );
+		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::FILTER_WORDS_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::HISTORY_OPTION , array( &$this , 'sanitize_slug' ) );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::TITLE_FORMAT_OPTION , 'trim' );
 		register_setting( self::SETTINGS_OPTION_GROUP , TweetCopier::AUTHOR_OPTION , array( &$this , 'sanitize_slug' ) );
@@ -292,6 +296,16 @@ class TweetCopierSettings {
 		$value = ( self::has_text($option) ? $option : '' );
 		echo "<span class='description'>@</span>
 			<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description'/>
+			<span class='description'>$description</span>";
+	}
+
+	public function render_field_filter_words( $args ) {
+
+		$fieldname = $args['fieldname'];
+		$description = __( $args['description'] , 'tweet_copier_textdomain' );
+		$option = get_option( $fieldname );
+		$value = ( self::has_text($option) ? $option : '' );
+		echo "<input id='$fieldname' type='text' name='$fieldname' value='$value' class='description'/>
 			<span class='description'>$description</span>";
 	}
 
