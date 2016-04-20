@@ -188,7 +188,7 @@ class TweetCopierSettings {
 			array( 'fieldname' => TweetCopier::SCREENNAME_OPTION, 'description' => 'Screen name of Twitter account to copy', 'label_for' => TweetCopier::SCREENNAME_OPTION ) );
 		add_settings_field( TweetCopier::FILTER_WORDS_OPTION, __( 'Filter words:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_filter_words' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
-			array( 'fieldname' => TweetCopier::FILTER_WORDS_OPTION, 'description' => 'Ignore tweets containing any of these words', 'label_for' => TweetCopier::FILTER_WORDS_OPTION ) );
+			array( 'fieldname' => TweetCopier::FILTER_WORDS_OPTION, 'description' => 'Ignore tweets containing any of these words (separate words with spaces)', 'label_for' => TweetCopier::FILTER_WORDS_OPTION ) );
 		add_settings_field( TweetCopier::HISTORY_OPTION, __( 'Copy past tweets?' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_history' )  , self::SETTINGS_PAGE , self::FETCH_SECTION,
 			array( 'fieldname' => TweetCopier::HISTORY_OPTION, 'description' => 'Copy all older tweets as well as new ones?' ) );

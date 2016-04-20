@@ -26,6 +26,7 @@ public function __construct( $namespace, $log ) {
 	// Default actions and filters
 	//add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'log_tweet' ) );
 	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'skip_duplicate' ) );
+	add_action( $this->namespace . '_tweet_before_new_post', array( &$this, 'skip_if_filtered' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'screen_names_to_html' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'hashtags_to_html' ) );
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'urls_to_html' ) );
@@ -106,10 +107,11 @@ returns an array
 */
 public function save_tweets($tweet_list, $params) {
 
-	if ( $this->log->is_debug() ) $this->log->debug( 'Save: About to save tweets. count ' . count( $tweet_list ));
+	if ($this->log->is_debug()) $this->log->debug('Save: About to save tweets. count ' . count($tweet_list));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
-		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); //return false to stop processing an item.
+		if ($this->log->is_debug()) $this->log->debug('Save: Checking tweet: ' . $tweet->text);
+		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); // return false to stop processing an item.
 		if ( ! $tweet) {
 			continue;
 		}
@@ -222,6 +224,25 @@ function skip_duplicate( $tweet )
 		if ( $query->have_posts() ) {
 			if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
 			return false;
+		}
+	}
+	return $tweet;
+}
+
+function skip_if_filtered( $tweet )
+{
+	if ($tweet) {
+		$filter_option = get_option( TweetCopier::FILTER_WORDS_OPTION );
+		if ($filter_option !== false) {
+			$filter = trim($filter_option);
+			if (strlen($filter)) {
+				// Change e.g. " Tr*mp/ think-piece  NARF" to "/(?:^|\s)(?:Tr\*mp\/|think-piece|NARF)(?:$|\s)/i"
+				$filter_re = '/(?:^|\\s)(?:' . preg_replace('/\\s+/', '|', preg_quote(trim($filter), '/')) . ')(?:$|\\s)/i';
+				if (preg_match($filter_re, $tweet->text)) {
+					if ( $this->log->is_debug() ) $this->log->debug( 'Skipped filtered tweet: ' . trim( mb_substr( $tweet->text, 0, 40 ) . '...' ));
+					return false;
+				}
+			}
 		}
 	}
 	return $tweet;
