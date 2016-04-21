@@ -3,7 +3,7 @@ Contributors: bennettmcelwee
 Donate link: http://thunderguy.com/semicolon/donate/
 Tags: twitter, tweet, import, copy, status
 Requires at least: 4.0
-Tested up to: 4.4
+Tested up to: 4.5
 Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -58,6 +58,7 @@ you want to copy. Tweet Copier will do the rest.
 
 = 1.1 =
 * Don't fetch replies
+* Filter option to ignore tweets containing certain words
 * (For developers) Configurable logging
 * Stability improvements
 
@@ -67,7 +68,7 @@ you want to copy. Tweet Copier will do the rest.
 == Upgrade Notice ==
 
 = 1.1 =
-Don't copy replies (tweets that start with @). Also fixed a potential error in the settings screen.
+Tweet Copier now ignores replies (tweets that start with @) and can also ignore tweets that contain certain words.
 
 = 1.0 =
 It works!

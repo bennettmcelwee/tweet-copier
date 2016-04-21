@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2013-15 Bennett McElwee. Licensed under the GPL (v2 or later).
+ * Copyright (c) 2013-16 Bennett McElwee. Licensed under the GPL (v2 or later).
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -20,6 +20,7 @@ class TweetCopier {
 	const TWITTER_USER_SCREENNAME_OPTION = 'tweet_copier_user_screenname';
 
 	const SCREENNAME_OPTION = 'tweet_copier_screenname';
+	const FILTER_WORDS_OPTION = 'tweet_copier_filter_words';
 	const TITLE_FORMAT_OPTION = 'tweet_copier_title_format';
 	const AUTHOR_OPTION = 'tweet_copier_author';
 	const CATEGORY_OPTION = 'tweet_copier_category';
