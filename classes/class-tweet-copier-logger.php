@@ -1,7 +1,7 @@
 <?php
 namespace TweetCopier {
 /*
- * Copyright (c) 2013 Bennett McElwee. Licensed under the GPL (v2 or later).
+ * Copyright (c) 2016 Bennett McElwee. Licensed under the GPL (v2 or later).
  */
 
 /**
