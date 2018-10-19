@@ -1,6 +1,6 @@
 === Tweet Copier ===
 Contributors: bennettmcelwee
-Donate link: http://thunderguy.com/semicolon/donate/
+Donate link: https://thunderguy.com/semicolon/donate/
 Tags: twitter, tweet, import, copy, status
 Requires at least: 4.0
 Tested up to: 4.9.9
