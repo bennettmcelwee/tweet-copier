@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin Name: Tweet Copier
- * Version: 1.1
+ * Version: 1.2
  * Plugin URI: http://thunderguy.com/semicolon
  * Description: Tweet Copier keeps your blog updated with copies of all your tweets, old and new.
  * Author: Bennett McElwee

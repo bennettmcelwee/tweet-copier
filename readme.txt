@@ -3,7 +3,7 @@ Contributors: bennettmcelwee
 Donate link: http://thunderguy.com/semicolon/donate/
 Tags: twitter, tweet, import, copy, status
 Requires at least: 4.0
-Tested up to: 4.6
+Tested up to: 4.9.9
 Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -55,6 +55,8 @@ much traffic, then the automatic checking might not happen as often as you've re
 you want to copy. Tweet Copier will do the rest.
 
 == Changelog ==
+= 1.2 =
+* Retrieve entire tweet text, even if more than 140 characters long
 
 = 1.1 =
 * Don't fetch replies
