@@ -20,7 +20,7 @@ class Logger {
 
 	public function __construct( $log_file_path ) {
 		$this->log_file_path = $log_file_path;
-                $this->level = Logger::DEBUG;
+		$this->level = Logger::DEBUG;
 	}
 
 	function enable($level = Logger::DEBUG) {
@@ -81,7 +81,8 @@ class NullLogger extends Logger {
 	public function __construct() {
 		parent::__construct('');
 	}
-	function set_level($level) {}
+	function enable($level = Logger::DEBUG) {}
+	function disable() {}
 	function is_error() { return false; }
 	function is_warn()  { return false; }
 	function is_info()  { return false; }

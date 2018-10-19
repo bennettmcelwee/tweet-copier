@@ -154,13 +154,13 @@ class TweetCopierSettings {
 	}
 
 	public function register_settings() {
-		
+
 		// add_settings_section( $id, $title, $callback, $page );
 		add_settings_section( self::AUTH_SECTION , __( 'Authentication' , 'tweet_copier_textdomain' ) , array( &$this , 'auth_settings' ) , self::SETTINGS_PAGE );
 		add_settings_section( self::FETCH_SECTION , __( 'Fetching tweets from Twitter' , 'tweet_copier_textdomain' ) , array( &$this , 'fetch_settings' ) , self::SETTINGS_PAGE );
 		add_settings_section( self::IMPORT_SECTION , __( 'Saving tweets into WordPress' , 'tweet_copier_textdomain' ) , array( &$this , 'import_settings' ) , self::SETTINGS_PAGE );
 		add_settings_section( self::SCHEDULE_SECTION , __( 'Scheduling' , 'tweet_copier_textdomain' ) , array( &$this , 'schedule_settings' ) , self::SETTINGS_PAGE );
-		
+
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
 		// This really just renders a single title on the left and some HTML on the right. In some cases it actually
 		// renders more than one field.
@@ -202,7 +202,7 @@ class TweetCopierSettings {
 		add_settings_field( TweetCopier::CATEGORY_OPTION, __( 'Category:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_category' )  , self::SETTINGS_PAGE , self::IMPORT_SECTION,
 			array( 'fieldname' => TweetCopier::CATEGORY_OPTION, 'description' => 'Category to use for copied tweets', 'label_for' => TweetCopier::CATEGORY_OPTION ) );
-		
+
 		add_settings_field( self::SCHEDULE_OPTION, __( 'Automatic copying' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_schedule' )  , self::SETTINGS_PAGE , self::SCHEDULE_SECTION,
 			array( 'fieldname' => self::SCHEDULE_OPTION, 'description' => 'How often to automatically copy tweets, or <em>Manual Only<em> to use the <em>Copy Now</em> button', 'label_for' => self::SCHEDULE_OPTION ) );
@@ -227,7 +227,7 @@ class TweetCopierSettings {
 		register_setting( self::SETTINGS_OPTION_GROUP , self::COPYNOW_OPTION );
 	}
 
-	public function auth_settings() { 
+	public function auth_settings() {
 		echo '<p>'
 				. __( 'Authentication details for fetching information from Twitter.' , 'tweet_copier_textdomain' )
 				. ' <a class="tweet_copier_auth_expander" href="#">' . __( 'details' , 'tweet_copier_textdomain' ) . '</a>'
@@ -536,9 +536,9 @@ class TweetCopierSettings {
 				settings_fields( self::SETTINGS_OPTION_GROUP );
 				// do_settings_sections( $page )
 				$this->do_settings_sections( self::SETTINGS_PAGE );
-				
+
 				submit_button( __( 'Save Settings' , 'tweet_copier_textdomain' ) );
-				
+
 		echo '</form>';
 		echo '<h3 class="title">Recent Results</h2>
 			<table>
@@ -594,8 +594,10 @@ class TweetCopierSettings {
 			),
 		));
 
+		if ( $this->log->is_debug() ) $this->log->debug( 'twitter_request_token result ' . $code);
+		do_action('tguy_log_debug', 'twitter_request_token result ' . $code);
 		if ( $code != 200 ) {
-			$this->plugin->checkpoint( 'error', __('There was an error communicating with Twitter: ' . $twitter_api->response['response']));
+			$this->plugin->checkpoint( 'error', __('There was an error communicating with Twitter: ' . $twitter_api->response['error'] . ' (' . $twitter_api->response['errno'] . ')'));
 			return;
 		}
 
@@ -669,7 +671,7 @@ class TweetCopierSettings {
 			}
 		}
 	}
-	
+
 	function uri_params() {
 		$url = parse_url($_SERVER['REQUEST_URI']);
 		$params = array();
