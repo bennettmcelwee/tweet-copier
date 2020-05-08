@@ -111,15 +111,16 @@ public function save_tweets($tweet_list, $params) {
 	if ($this->log->is_debug()) $this->log->debug('Save: About to save tweets. count ' . count($tweet_list));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
-		if ($this->log->is_debug()) $this->log->debug('Save: Checking tweet: ' . $tweet->full_text);
+		if ($this->log->is_debug()) $this->log->debug('Save: Checking tweet: ' .  $this->get_text($tweet));
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); // return false to stop processing an item.
 		if ( ! $tweet) {
 			continue;
 		}
-		$processed_text = apply_filters ($this->namespace . '_text_before_new_post', $tweet->full_text);
+		$processed_text = apply_filters ($this->namespace . '_text_before_new_post', $this->get_text($tweet));
 
-		if (isset($tweet->entities->media[0]->media_url)) {
-			$processed_text .= ' <br /><img alt="" src="' . $tweet->entities->media[0]->media_url . '" />';
+		$media_url = $this->get_media_url($tweet);
+		if ($media_url) {
+			$processed_text .= ' <br /><img alt="" src="' . $media_url . '" />';
 		}
 
 		$new_post = array('post_title' => $this->format_title( $tweet, $params['title_format'] ),
@@ -138,10 +139,10 @@ public function save_tweets($tweet_list, $params) {
 		set_post_format( $new_post_id, 'status' );
 		add_post_meta( $new_post_id, 'tweetcopier_twitter_id', $tweet->id_str, true);
 		add_post_meta( $new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
-		add_post_meta( $new_post_id, 'tweetcopier_original_text', $tweet->full_text, true); 
+		add_post_meta( $new_post_id, 'tweetcopier_original_text', $this->get_text($tweet), true); 
 		add_post_meta( $new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( $this->log->is_debug() ) $this->log->debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $tweet->full_text, 0, 40 ) . '...' ));
+		if ( $this->log->is_debug() ) $this->log->debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $this->get_text($tweet), 0, 40 ) . '...' ));
 		++$count;
 	}
 	return compact( 'count' );
@@ -223,7 +224,7 @@ function skip_duplicate( $tweet )
 			'meta_value' => $tweet->id_str,
 		));
 		if ( $query->have_posts() ) {
-			if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $tweet->full_text, 0, 40 ) . '...' ));
+			if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $this->get_text($tweet), 0, 40 ) . '...' ));
 			return false;
 		}
 	}
@@ -239,8 +240,8 @@ function skip_if_filtered( $tweet )
 			if (strlen($filter)) {
 				// Change e.g. " Tr*mp/ think-piece  NARF" to "/(?:^|\s)(?:Tr\*mp\/|think-piece|NARF)(?:$|\s)/i"
 				$filter_re = '/(?:^|\\s)(?:' . preg_replace('/\\s+/', '|', preg_quote(trim($filter), '/')) . ')(?:$|\\s)/i';
-				if (preg_match($filter_re, $tweet->full_text)) {
-					if ( $this->log->is_debug() ) $this->log->debug( 'Skipped filtered tweet: ' . trim( mb_substr( $tweet->full_text, 0, 40 ) . '...' ));
+				if (preg_match($filter_re, $this->get_text($tweet))) {
+					if ( $this->log->is_debug() ) $this->log->debug( 'Skipped filtered tweet: ' . trim( mb_substr( $this->get_text($tweet), 0, 40 ) . '...' ));
 					return false;
 				}
 			}
@@ -252,7 +253,7 @@ function skip_if_filtered( $tweet )
 function format_title( $tweet, $format ) {
 	$title = $format;
 	if ( mb_strstr( $format, '%t' ) ) {
-		$text = $tweet->full_text;
+		$text = $this->get_text($tweet);
 		if ( 40 < mb_strlen( $text ) ) {
 			$text = mb_substr( $text, 0, 40 );
 			$initial = mb_strrchr( $text, ' ', true );
@@ -268,6 +269,22 @@ function format_title( $tweet, $format ) {
 		$title = str_replace ( '%d', $date, $title );
 	}
 	return $title;
+}
+
+function get_text( $tweet ) {
+	return $tweet->truncated ? $tweet->extended_tweet->full_text : $tweet->full_text;
+}
+
+function get_media_url( $tweet ) {
+	if (isset($tweet->extended_entities->media[0]->media_url)) {
+		return $tweet->extended_entities->media[0]->media_url;
+	}
+	else if (isset($tweet->entities->media[0]->media_url)) {
+		return $tweet->entities->media[0]->media_url;
+	}
+	else {
+		return false;
+	}
 }
 
 } // class TweetCopierEngine
