@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2013-16 Bennett McElwee. Licensed under the GPL (v2 or later).
+ * Copyright (c) 2013-20 Bennett McElwee. Licensed under the GPL (v2 or later).
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -32,11 +32,11 @@ public function __construct( $namespace, $log ) {
 	add_action( $this->namespace . '_text_before_new_post', array( &$this, 'urls_to_html' ) );
 }
 
-// function log_tweet( $tweet )
-// {
-// 	$this->log->info(print_r($tweet, true));
-// 	return $tweet;
-// }
+function log_tweet( $tweet )
+{
+	$this->log->info(print_r($tweet, true));
+	return $tweet;
+}
 
 
 /**
@@ -111,20 +111,26 @@ public function save_tweets($tweet_list, $params) {
 	if ($this->log->is_debug()) $this->log->debug('Save: About to save tweets. count ' . count($tweet_list));
 	$count = 0;
 	foreach ($tweet_list as $tweet) {
-		if ($this->log->is_debug()) $this->log->debug('Save: Checking tweet: ' .  $this->get_text($tweet));
+		if ($this->log->is_debug()) $this->log->debug('Save: Checking tweet: ' .  $this->get_original_text($tweet));
 		$tweet = apply_filters ($this->namespace . '_tweet_before_new_post', $tweet); // return false to stop processing an item.
 		if ( ! $tweet) {
 			continue;
 		}
-		$processed_text = apply_filters ($this->namespace . '_text_before_new_post', $this->get_text($tweet));
+		$tweet_html = '<div class="tweet-body">' . $this->get_original_text($tweet) . '</div>';
+		$originator = $this->get_originator($tweet);
+		if ($originator) {
+			$tweet_html = '<div class="retweet-attribution"><em>Retweeted from @' . $originator . '</em></div><br/>'
+				. $tweet_html;
+		}
+		$tweet_html = apply_filters ($this->namespace . '_text_before_new_post', $tweet_html);
 
 		$media_url = $this->get_media_url($tweet);
 		if ($media_url) {
-			$processed_text .= ' <br /><img alt="" src="' . $media_url . '" />';
+			$tweet_html .= '<img class="tweet-image" alt="" src="' . $media_url . '" />';
 		}
 
 		$new_post = array('post_title' => $this->format_title( $tweet, $params['title_format'] ),
-						  'post_content' => trim( $processed_text ),
+						  'post_content' => trim( $tweet_html ),
 						  'post_date' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_date_gmt' => date( 'Y-m-d H:i:s', strtotime( $tweet->created_at ) ),
 						  'post_author' => $params['author'],
@@ -139,10 +145,10 @@ public function save_tweets($tweet_list, $params) {
 		set_post_format( $new_post_id, 'status' );
 		add_post_meta( $new_post_id, 'tweetcopier_twitter_id', $tweet->id_str, true);
 		add_post_meta( $new_post_id, 'tweetcopier_twitter_author', $params['screen_name'], true); 
-		add_post_meta( $new_post_id, 'tweetcopier_original_text', $this->get_text($tweet), true); 
+		add_post_meta( $new_post_id, 'tweetcopier_original_text', $this->get_plain_text($tweet), true);
 		add_post_meta( $new_post_id, 'tweetcopier_date_saved', date ('Y-m-d H:i:s'), true);
 
-		if ( $this->log->is_debug() ) $this->log->debug( 'Save: Saved post id [' . $new_post_id . '] ' . trim( mb_substr( $this->get_text($tweet), 0, 40 ) . '...' ));
+		if ( $this->log->is_debug() ) $this->log->debug( 'Save: Saved post id [' . $new_post_id . '] ' . $this->get_abbrev_text($tweet));
 		++$count;
 	}
 	return compact( 'count' );
@@ -224,7 +230,7 @@ function skip_duplicate( $tweet )
 			'meta_value' => $tweet->id_str,
 		));
 		if ( $query->have_posts() ) {
-			if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . trim( mb_substr( $this->get_text($tweet), 0, 40 ) . '...' ));
+			if ( $this->log->is_debug() ) $this->log->debug( 'Skipped duplicate tweet: ' . $this->get_abbrev_text($tweet));
 			return false;
 		}
 	}
@@ -240,8 +246,8 @@ function skip_if_filtered( $tweet )
 			if (strlen($filter)) {
 				// Change e.g. " Tr*mp/ think-piece  NARF" to "/(?:^|\s)(?:Tr\*mp\/|think-piece|NARF)(?:$|\s)/i"
 				$filter_re = '/(?:^|\\s)(?:' . preg_replace('/\\s+/', '|', preg_quote(trim($filter), '/')) . ')(?:$|\\s)/i';
-				if (preg_match($filter_re, $this->get_text($tweet))) {
-					if ( $this->log->is_debug() ) $this->log->debug( 'Skipped filtered tweet: ' . trim( mb_substr( $this->get_text($tweet), 0, 40 ) . '...' ));
+				if (preg_match($filter_re, $this->get_original_text($tweet))) {
+					if ( $this->log->is_debug() ) $this->log->debug( 'Skipped filtered tweet: ' . $this->get_abbrev_text($tweet));
 					return false;
 				}
 			}
@@ -253,7 +259,7 @@ function skip_if_filtered( $tweet )
 function format_title( $tweet, $format ) {
 	$title = $format;
 	if ( mb_strstr( $format, '%t' ) ) {
-		$text = $this->get_text($tweet);
+		$text = $this->get_original_text($tweet);
 		if ( 40 < mb_strlen( $text ) ) {
 			$text = mb_substr( $text, 0, 40 );
 			$initial = mb_strrchr( $text, ' ', true );
@@ -271,20 +277,51 @@ function format_title( $tweet, $format ) {
 	return $title;
 }
 
-function get_text( $tweet ) {
-	return $tweet->truncated ? $tweet->extended_tweet->full_text : $tweet->full_text;
+function get_plain_text( $tweet ) {
+	// Returns the full text including RT if it's a retweet
+	$original = $this->get_original_text($tweet->retweeted_status);
+	if (isset($tweet->retweeted_status)) {
+		return 'RT @' . ($tweet->entities->user_mentions[0]->screen_name ?? '?') . ': ' . $original;
+	}
+	else {
+		return $original;
+	}
 }
 
-function get_media_url( $tweet ) {
-	if (isset($tweet->extended_entities->media[0]->media_url)) {
-		return $tweet->extended_entities->media[0]->media_url;
+function get_abbrev_text( $tweet ) {
+	$text = $tweet->truncated ? $tweet->extended_tweet->full_text : $tweet->full_text;
+	return mb_substr($text, 0, 40) . '...';
+}
+
+function get_original_text( $tweet ) {
+	if (isset($tweet->retweeted_status)) {
+		return $this->get_original_text($tweet->retweeted_status);
 	}
-	else if (isset($tweet->entities->media[0]->media_url)) {
-		return $tweet->entities->media[0]->media_url;
+	else {
+		return $tweet->truncated ? $tweet->extended_tweet->full_text : $tweet->full_text;
+	}
+}
+
+function get_originator( $tweet ) {
+	if (isset($tweet->retweeted_status)) {
+		$originator = $tweet->entities->user_mentions[0]->screen_name ?? false;
+		if ( ! $originator) {
+			// Sometimes the originator isn't separately listed, so we have to parse the text
+			if (preg_match('/^RT @([^:]+):/', $tweet->full_text, $matches)) {
+				$originator = $matches[1];
+			}
+		}
+		return $originator;
 	}
 	else {
 		return false;
 	}
+}
+
+function get_media_url( $tweet ) {
+	return $tweet->extended_entities->media[0]->media_url
+		?? $tweet->entities->media[0]->media_url
+		?? false;
 }
 
 } // class TweetCopierEngine
