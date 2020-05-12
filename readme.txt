@@ -3,7 +3,7 @@ Contributors: bennettmcelwee
 Donate link: https://thunderguy.com/semicolon/donate/
 Tags: twitter, tweet, import, copy, status
 Requires at least: 4.0
-Tested up to: 5.0
+Tested up to: 5.4
 Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -55,6 +55,10 @@ much traffic, then the automatic checking might not happen as often as you've re
 you want to copy. Tweet Copier will do the rest.
 
 == Changelog ==
+= 1.3 =
+* Update for recent changes to Twitter API access
+* Improve display of tweets, especially retweets
+
 = 1.2 =
 * Retrieve entire tweet text, even if more than 140 characters long
 
@@ -80,4 +84,3 @@ It works!
 = Network usage =
 
 If you use Network Deactivation to disable Tweet Copier on all sites in a network, you may find that Tweet Copier keeps copying tweets even though the plugin is deactivated. To avoid this, try using the [Proper Network Activation plugin](http://wordpress.org/plugins/proper-network-activation/). This only applies if you use Network Activation - there should be no problem if you activate or deactivate from the individual sites.
-
