@@ -279,7 +279,7 @@ function format_title( $tweet, $format ) {
 
 function get_plain_text( $tweet ) {
 	// Returns the full text including RT if it's a retweet
-	$original = $this->get_original_text($tweet->retweeted_status);
+	$original = $this->get_original_text($tweet);
 	if (isset($tweet->retweeted_status)) {
 		return 'RT @' . ($tweet->entities->user_mentions[0]->screen_name ?? '?') . ': ' . $original;
 	}
