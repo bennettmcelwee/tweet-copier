@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2013-16 Bennett McElwee. Licensed under the GPL (v2 or later).
+ * Copyright (c) 2013-20 Bennett McElwee. Licensed under the GPL (v2 or later).
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -164,12 +164,12 @@ class TweetCopierSettings {
 		// add_settings_field( $id, $title, $callback, $page, $section, $args );
 		// This really just renders a single title on the left and some HTML on the right. In some cases it actually
 		// renders more than one field.
-		add_settings_field( TweetCopier::TWITTER_CONSUMER_KEY_OPTION, __( 'Consumer key:' , 'tweet_copier_textdomain' ) ,
+		add_settings_field( TweetCopier::TWITTER_CONSUMER_KEY_OPTION, __( 'Consumer API key:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'description' => 'Twitter application consumer key', 'label_for' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION ) );
-		add_settings_field( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, __( 'Consumer secret:' , 'tweet_copier_textdomain' ) ,
+			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION, 'description' => 'Twitter application consumer API key', 'label_for' => TweetCopier::TWITTER_CONSUMER_KEY_OPTION ) );
+		add_settings_field( TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, __( 'Consumer API secret key:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
-			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'description' => 'Twitter application consumer secret', 'label_for' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ) );
+			array( 'fieldname' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION, 'description' => 'Twitter application consumer API secret key', 'label_for' => TweetCopier::TWITTER_CONSUMER_SECRET_OPTION ) );
 		add_settings_field( TweetCopier::TWITTER_USER_TOKEN_OPTION, __( 'User token:' , 'tweet_copier_textdomain' ) ,
 			array( &$this , 'render_field_auth' )  , self::SETTINGS_PAGE , self::AUTH_SECTION,
 			array( 'fieldname' => TweetCopier::TWITTER_USER_TOKEN_OPTION, 'description' => 'Twitter user token', 'label_for' => TweetCopier::TWITTER_USER_TOKEN_OPTION ) );
@@ -228,24 +228,30 @@ class TweetCopierSettings {
 	}
 
 	public function auth_settings() {
+		$website_url = get_home_url();
+		$callback_url = admin_url('options-general.php');
 		echo '<p>'
 				. __( 'Authentication details for fetching information from Twitter.' , 'tweet_copier_textdomain' )
 				. ' <a class="tweet_copier_auth_expander" href="#">' . __( 'details' , 'tweet_copier_textdomain' ) . '</a>'
 				. '</p>';
-		echo '<div class="settings-section-content">';
-		echo '<p>To fetch tweets, you need to tell Twitter who you are and what application you will be using.<p>';
-		echo '<p>First, tell Twitter that you\'re using Tweet Copier as your application:<p>
+		echo <<<EOS
+			<div class="settings-section-content">
+			<p>To fetch tweets, you need to tell Twitter who you are and what application you will be using.<p>
+			<p>First, tell Twitter that you're using Tweet Copier as your application:<p>
 			<ol>
-			<li>Go to <a href="https://apps.twitter.com/">Twitter Apps</a> and sign in using your Twitter login.
+			<li>Go to <a href="https://developer.twitter.com/en/apps">Twitter Apps</a> and sign in using your Twitter login.
 			<li>Click <em>Create New App</em>
-			<li>For <em>Name</em> and <em>Description</em>, type "Tweet Copier for" and your blog name, for example <tt>Tweet Copier for Spiderblog</tt>.
-			<li>For <em>Website</em> and <em>Callback URL</em>, type your blog address.
-			<li>Check the checkbox under the Developer Agreement and create the application.
-			<li>When the next screen appears, look for the Consumer Key and click <em>manage keys and access tokens</em>.
-			<li>Copy the codes next to <em>Consumer Key</em> and <em>Consumer Secret</em> and paste them below.
-			</ol>';
-		echo '<p>Then, tell Twitter who will be fetching the tweets. Use the <em>Authenticate</em> button below.<p>';
-		echo '</div>';
+			<li>For <em>Name</em> and <em>Description</em>, type <tt> Tweet Copier for </tt> and your blog name, for example <tt> Tweet Copier for Spiderblog</tt>
+			<li>For <em>Website</em>, type <tt> {$website_url}</tt>
+			<li>For <em>Callback URL</em>, type <tt> {$callback_url}</tt>
+			<li>For <em>Tell us how this app will be used</em>, type something like <tt> Enable the Tweet Copier plugin for wordPress</tt>
+			<li>Click <em>Create</em> to create the application.
+			<li>Click <em>Keys and tokens</em> to see your Consumer API keys.
+			<li>Under <em>Consumer API keys</em>, copy the codes next to <em>API key</em> and <em>API secret key</em> and paste them below.
+			</ol>
+			<p>Then, tell Twitter who will be fetching the tweets. Use the <em>Authenticate</em> button below.<p>
+		</div>
+EOS;
 	}
 
 	public function fetch_settings() { echo '<p>' . __( 'How to fetch tweets from Twitter.' , 'tweet_copier_textdomain' ) . '</p>'; }
@@ -595,7 +601,6 @@ class TweetCopierSettings {
 		));
 
 		if ( $this->log->is_debug() ) $this->log->debug( 'twitter_request_token result ' . $code);
-		do_action('tguy_log_debug', 'twitter_request_token result ' . $code);
 		if ( $code != 200 ) {
 			$this->plugin->checkpoint( 'error', __('There was an error communicating with Twitter: ' . $twitter_api->response['error'] . ' (' . $twitter_api->response['errno'] . ')'));
 			return;
