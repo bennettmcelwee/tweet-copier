@@ -190,8 +190,10 @@ public function url_to_html( $url )
 	while (--$guard > 0) {
 		if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Checking $url" );
 		$result = wp_remote_head($url, array('redirection' => 0));
-		//print_r($result);
-		if (isset($result['response']['code'])) {
+		if (is_wp_error($result)) {
+			if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Error: {$result->get_error_message()}" );
+		}
+		else if (isset($result['response']['code'])) {
 			$code = $result['response']['code'];
 			if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Code = $code" );
 			if (300 <= $code && $code < 400 && isset($result['headers']['location'])) {
@@ -209,7 +211,7 @@ public function url_to_html( $url )
 	}
 	if ( $this->log->is_debug() ) $this->log->debug( "url_to_html: Resolved to $url" );
 
-	if (isset($result['headers']['content-type'])
+	if (!is_wp_error($result) && isset($result['headers']['content-type'])
 			&& 0 === strncmp($result['headers']['content-type'], 'image/', strlen('image/'))) {
 		return '<img alt="" src="' . $url . '" />';
 	} else {
